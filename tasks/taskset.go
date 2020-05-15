@@ -10,7 +10,7 @@ import (
 // TaskSet holds a chain of task to be carried out and a process configuration for
 // how they should be carried out.
 type TaskSet struct {
-	TaskID        string        `json:"task_id"        dynamodbav:"task_id"`
+	NameID        string        `json:"name_id"        dynamodbav:"name_id"`
 	Tasks         []Task        `json:"tasks"          dynamodbav:"tasks"`
 	ProcessConfig ProcessConfig `json:"process_config" dynamodbav:"process_config"`
 }

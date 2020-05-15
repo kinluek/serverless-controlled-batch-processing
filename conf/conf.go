@@ -20,7 +20,7 @@ func GetEnvDefault(envName, defaultVal string) string {
 func GetEnvRequired(envName string) (string, error) {
 	val := os.Getenv(envName)
 	if val == "" {
-		return "", newError(ErrCodeEnvNotSet, fmt.Sprintf("env name %s not set", envName))
+		return "", fmt.Errorf("envar %s not set", envName)
 	}
 	return val, nil
 }

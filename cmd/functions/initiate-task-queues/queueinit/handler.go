@@ -57,10 +57,7 @@ func (h *Handler) Handle(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if err := h.setupTaskQueues(ctx, getTaskIDs(taskSets)); err != nil {
-		return err
-	}
-	return nil
+	return h.setupTaskQueues(ctx, getTaskIDs(taskSets))
 }
 
 func (h *Handler) setupTaskQueues(ctx context.Context, taskSetIDs []string) error {
@@ -86,6 +83,7 @@ func (h *Handler) setupTaskQueues(ctx context.Context, taskSetIDs []string) erro
 func (h *Handler) setupTaskQueue(ctx context.Context, id string, errChan chan<- *CreateQueueError) {
 	queueName := createQueueName(id)
 	if err := queue.CreateQueueWithDLQ(ctx, h.sqsSvc, queueName); err != nil {
+		fmt.Println(err) // TODO: replace with proper logger
 		errChan <- &CreateQueueError{
 			OriginalErr: err,
 			Message:     err.Error(),
@@ -104,7 +102,7 @@ func createQueueName(taskSetID string) string {
 func getTaskIDs(taskSets []tasks.TaskSet) []string {
 	ids := make([]string, len(taskSets))
 	for i := range taskSets {
-		ids[i] = taskSets[i].TaskID
+		ids[i] = taskSets[i].NameID
 	}
 	return ids
 }

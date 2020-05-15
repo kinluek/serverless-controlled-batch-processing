@@ -1,51 +1,20 @@
-# Welcome to Serverless!
-#
-# This file is the main config file for your service.
-# It's very minimal at this point and uses default values.
-# You can always add more config options for more control.
-# We've included some commented out config examples here.
-# Just uncomment any of them to get that config option.
-#
-# For full config options, check the docs:
-#    docs.serverless.com
-#
-# Happy Coding!
-
 service: serverless-processing
-# app and org for use with dashboard.serverless.com
-#app: your-app-name
-#org: your-org-name
 
-# You can pin your service to only deploy with a specific Serverless version
-# Check out our docs for more details
-# frameworkVersion: "=X.X.X"
 frameworkVersion: '>=1.28.0 <2.0.0'
+
+plugins:
+  - serverless-iam-roles-per-function
+  - serverless-pseudo-parameters
+
+custom:
+  tableName: task-sets
+
 
 provider:
   name: aws
   runtime: go1.x
-#  stage: dev
-#  region: eu-west-1
-
-# you can add statements to the Lambda function's IAM Role here
-#  iamRoleStatements:
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:ListBucket"
-#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
-#    - Effect: "Allow"
-#      Action:
-#        - "s3:PutObject"
-#      Resource:
-#        Fn::Join:
-#          - ""
-#          - - "arn:aws:s3:::"
-#            - "Ref" : "ServerlessDeploymentBucket"
-#            - "/*"
-
-# you can define service wide environment variables here
-#  environment:
-#    variable1: value1
+  stage: dev
+  region: eu-west-2
 
 package:
   exclude:
@@ -54,20 +23,33 @@ package:
     - ./bin/**
 
 functions:
-  hello:
+  initiate-task-queues:
     handler: bin/initiate-task-queues
+    environment:
+      DYNAMO_TASK_TABLE_NAME: ${self:custom.tableName}
+    iamRoleStatements:
+      - Effect: Allow
+        Action: dynamodb:scan
+        Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.tableName}
+      - Effect: Allow
+        Action:
+          - sqs:TagQueue
+          - sqs:CreateQueue
+          - sqs:SetQueueAttributes
+          - sqs:GetQueueAttributes
+        Resource: arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*
 
 resources:
   Resources:
     TaskSetsTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: task-sets
+        TableName: ${self:custom.tableName}
         AttributeDefinitions:
-          - AttributeName: name
+          - AttributeName: name_id
             AttributeType: S
         KeySchema:
-          - AttributeName: name
+          - AttributeName: name_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
 

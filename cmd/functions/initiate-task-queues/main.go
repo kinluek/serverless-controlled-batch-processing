@@ -43,7 +43,10 @@ func main() {
 // loadConfig loads the environment variables needed for the configuration
 // of the program, any problems with loading the config will cause the program to panic.
 func loadConfig() config {
-	tableName, err := conf.GetEnvRequired("DYNAMO_TASK_TABLE_NAME")
+	// Configuration Variable Names.
+	const EnvarTableName = "DYNAMO_TASK_TABLE_NAME"
+
+	tableName, err := conf.GetEnvRequired(EnvarTableName)
 	if err != nil {
 		panic(err)
 	}
