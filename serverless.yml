@@ -7,7 +7,7 @@ plugins:
   - serverless-pseudo-parameters
 
 custom:
-  tableName: job-configs
+  tableName: process-configs
 
 
 provider:
@@ -34,7 +34,7 @@ functions:
           enabled: true
           arn:
             Fn::GetAtt:
-              - JobConfigTable
+              - ProcessConfigTable
               - StreamArn
     environment:
       DYNAMO_JOB_CONFIGS_TABLE_NAME: ${self:custom.tableName}
@@ -57,7 +57,7 @@ functions:
 
 resources:
   Resources:
-    JobConfigTable:
+    ProcessConfigTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.tableName}
