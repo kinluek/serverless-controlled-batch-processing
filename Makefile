@@ -1,7 +1,7 @@
 .PHONY: build clean deploy
 
 build:
-	env GOOS=linux go build -o bin/initiate-task-queues cmd/functions/initiate-task-queues/main.go
+	env GOOS=linux go build -o bin/create-queue cmd/functions/create-queue/main.go
 
 clean:
 	rm -rf ./bin

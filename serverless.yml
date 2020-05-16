@@ -7,7 +7,7 @@ plugins:
   - serverless-pseudo-parameters
 
 custom:
-  tableName: task-sets
+  tableName: job-configs
 
 
 provider:
@@ -23,13 +23,29 @@ package:
     - ./bin/**
 
 functions:
-  initiate-task-queues:
-    handler: bin/initiate-task-queues
+  create-queue:
+    handler: bin/create-queue
+    events:
+      - stream:
+          type: dynamodb
+          batchSize: 1
+          startingPosition: LATEST
+          maximumRetryAttempts: 2
+          enabled: true
+          arn:
+            Fn::GetAtt:
+              - JobConfigTable
+              - StreamArn
     environment:
-      DYNAMO_TASK_TABLE_NAME: ${self:custom.tableName}
+      DYNAMO_JOB_CONFIGS_TABLE_NAME: ${self:custom.tableName}
     iamRoleStatements:
       - Effect: Allow
-        Action: dynamodb:scan
+        Action:
+          - dynamodb:scan
+          - dynamodb:ListStreams
+          - dynamodb:DescribeTable
+          - dynamodb:UpdateItem
+          - dynamodb:GetItem
         Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.tableName}
       - Effect: Allow
         Action:
@@ -41,17 +57,19 @@ functions:
 
 resources:
   Resources:
-    TaskSetsTable:
+    JobConfigTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.tableName}
         AttributeDefinitions:
-          - AttributeName: name_id
+          - AttributeName: id
             AttributeType: S
         KeySchema:
-          - AttributeName: name_id
+          - AttributeName: id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
 
     LambdaCodeBucket:
       Type: AWS::S3::Bucket
