@@ -51,14 +51,14 @@ Use a separate queue and Lambda function for each task group, that are created t
 This way each set of tasks can be processed at their maximum through put consistently, without being blocked by tasks from other groups in the queue.
 
 Here's what we'll need:
- - S3 bucket to hold source that Lambda functions will be created from. 
- - SNS topic that the S3 bucket will publish update events to on bucket objects.
- - Source code for your task processor Lambda function - we will create an instance of the Lambda for each task group
- - Source code for a Lambda function which gets subscribed to an SNS topic delivers update events on the task processor source code.
+ - S3 bucket to hold the source code that Lambda functions will be created from. 
+ - SNS topic that the S3 bucket will publish events to on S3 object updates.
+ - Source code for your task processor Lambda function in the S3 bucket - we will create an instance of the Lambda for each task group
+ - Source code for a Lambda function which gets subscribed to an SNS topic that delivers object update events from the S3 bucket when the task processor source code is updated.
    We will create an instance of this function along with every task processor function, so that we can update lambda source codes easily,
-   as they do not automatically update when you change the S3 source code.
+   as by default, your Lambda function does not automatically update when you update the source code for it in S3.
  - A DynamoDB table to hold process configurations for each task group, with streams enabled.
- - A stream listener Lambda function which listens to the DyamoDB streams, and creates new instances of the task processor function along with SQS queues for it to pull from, when new configurations are added.
+ - A stream listener Lambda function, which listens to the DyamoDB streams, and creates new instances of the task processor function along with SQS queues for it to pull from when new configurations are added.
    The configuration item will hold the SQS and Lambda configuration options (concurrency, visibility timeouts, environment variables etc)
  - The stream listener should also be able to update the Lambda and SQS configuration when the configuration object is updated.
  - The stream listener should also be able to remove all the resources for a process coniguration when that object is deleted.
