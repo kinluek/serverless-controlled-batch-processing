@@ -1,6 +1,6 @@
 # Serverless Processing - Controlling Concurrency (JUST FOR FUN! WIP)
 
-An experimental project started out of boredom and curiosity, the project sets out to see how we can use Lambda and event driven architectures in AWS to manage thousands of work queue pipelines to provide optimal throughput for rate limited work loads.
+An experimental project started out of boredom and curiosity, the project sets out to see how we can use Lambda and event driven architectures in AWS, to manage thousands of work queue pipelines to provide optimal throughput for rate limited workloads.
 
 Before you delve into this, it is important to know, that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
 
