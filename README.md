@@ -1,8 +1,8 @@
 # Serverless Processing - Controlling Concurrency (JUST FOR FUN! WIP)
 
-An experimental project started out of boredom and curiosity, the project sets out to see how we can piece together serverless and event driven architectures to configure optimal throughput/concurrency for different batches of jobs using a single Lambda handler (not quite the same handler, but the same handler code...).
+An experimental project started out of boredom and curiosity, the project sets out to see how we can use Lambda and event driven architectures in AWS to manage thousands of work queue pipelines to provide optimal throughput for rate limited work loads.
 
-Before you delve into this, it is important to know, that this project is just for fun and anything you decide to take from this, you take at your own risk.
+Before you delve into this, it is important to know, that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
 
 ## The Problem
 
@@ -85,6 +85,6 @@ limited to 10. Pipelines could also be removed and replaced with others if they 
 have a lot more than the 3800 job configurations, if we are not having to use them all at once. Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
 
-## TODOS
-- [ ] Create lucid chart diagram of the architecture.
-- [x] Trigger: Create SQS queues when job configs are added to the job config DyanamoDB table.
+### NOTES
+
+- Add Lucid Chart Diagram
