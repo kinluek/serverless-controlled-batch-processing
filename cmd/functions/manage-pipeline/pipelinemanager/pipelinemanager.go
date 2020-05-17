@@ -42,7 +42,15 @@ func (h *PipelineManager) Handle(ctx context.Context, instruction Instruction) e
 }
 
 func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) error {
-	return h.createQueue(ctx, instruction.Config.ID)
+
+	// TODO: add cases for update and delete operations.
+	// TODO: attach lambdas
+	switch instruction.Operation {
+	case Add:
+		return h.createQueue(ctx, instruction.Config.ID)
+	default:
+		return nil
+	}
 }
 
 func (h *PipelineManager) createQueue(ctx context.Context, id string) error {
