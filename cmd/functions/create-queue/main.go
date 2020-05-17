@@ -11,19 +11,33 @@ import (
 	"github.com/kinluek/serverless-controlled-batch-processing/env"
 	"github.com/kinluek/serverless-controlled-batch-processing/processconfigs"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"os"
 )
 
-var envs envars
-var sess *session.Session
-var dbSvc *dynamodb.DynamoDB
-var sqsSvc *sqs.SQS
+// envars holds the configuration parameters for the application.
+type envars struct {
+	processConfigsTableName string // env:DYNAMO_PROCESS_CONFIGS_TABLE_NAME
+	envName                 string // env:ENV_NAME
+}
+
+var (
+	envs   envars
+	sess   *session.Session
+	dbSvc  *dynamodb.DynamoDB
+	sqsSvc *sqs.SQS
+	logger *logrus.Logger
+)
 
 // use init function to save on reinitialisation costs on lambda warm starts.
 func init() {
+	envs = loadEnvars()
 	sess = session.Must(session.NewSession())
 	dbSvc = dynamodb.New(sess)
 	sqsSvc = sqs.New(sess)
-	envs = loadEnvars()
+	logger = logrus.New()
+	logger.SetFormatter(&logrus.JSONFormatter{PrettyPrint: true})
+	logger.SetOutput(os.Stdout)
 }
 
 // The Lambda function to be triggered when a new ProcessConfig is added to the job envars table. It handles the setup
@@ -33,20 +47,13 @@ func handle(ctx context.Context, event events.DynamoDBEvent) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to parse dynamo event")
 	}
-	if err := cqhandler.New(dbSvc, sqsSvc, envs.processConfigsTableName, envs.envName).Handle(ctx, processConfig); err != nil {
-		return errors.Wrapf(err, "failed to handle queue setup for process config %s", processConfig.ID)
-	}
-	return nil
+	h := cqhandler.New(dbSvc, sqsSvc, envs.processConfigsTableName, envs.envName)
+	h.Use(cqhandler.Log(logger))
+	return h.Handle(ctx, processConfig)
 }
 
 func main() {
 	lambda.Start(handle)
-}
-
-// envars holds the configuration parameters for the application.
-type envars struct {
-	processConfigsTableName string // env:DYNAMO_PROCESS_CONFIGS_TABLE_NAME
-	envName                 string // env:ENV_NAME
 }
 
 // loadEnvars loads the environment variables needed for the configuration

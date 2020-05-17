@@ -13,7 +13,7 @@ custom:
 provider:
   name: aws
   runtime: go1.x
-  stage: dev
+  stage: ${opt:stage}
   region: eu-west-2
 
 package:
@@ -37,7 +37,8 @@ functions:
               - ProcessConfigTable
               - StreamArn
     environment:
-      DYNAMO_JOB_CONFIGS_TABLE_NAME: ${self:custom.tableName}
+      DYNAMO_PROCESS_CONFIGS_TABLE_NAME: ${self:custom.tableName}
+      ENV_NAME: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
         Action:

@@ -15,6 +15,7 @@ type CreateQueueHandler struct {
 	sqsSvc              *sqs.SQS
 	jobConfigsTableName string
 	queueSuffix         string
+	mids                []Middleware
 }
 
 // New returns a new instance of CreateQueueHandler.
@@ -23,12 +24,22 @@ func New(dbSvc *dynamodb.DynamoDB, sqsSvc *sqs.SQS, tableName, envName string) *
 		dbSvc:               dbSvc,
 		sqsSvc:              sqsSvc,
 		jobConfigsTableName: tableName,
-		queueSuffix:         envName + "-queue",
+		queueSuffix:         fmt.Sprintf("-%s-queue", envName),
 	}
+}
+
+// Use attaches middleware to the Handler
+func (h *CreateQueueHandler) Use(mids ...Middleware) {
+	h.mids = append(h.mids, mids...)
 }
 
 // Handle create a a queue from a ProcessConfig.
 func (h *CreateQueueHandler) Handle(ctx context.Context, config processconfigs.ProcessConfig) error {
+	hf := wrapMiddleware(h.handle, h.mids...)
+	return hf(ctx, config)
+}
+
+func (h *CreateQueueHandler) handle(ctx context.Context, config processconfigs.ProcessConfig) error {
 	return h.createQueue(ctx, config.ID)
 }
 
