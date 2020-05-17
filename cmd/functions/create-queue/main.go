@@ -29,12 +29,12 @@ func init() {
 // The Lambda function to be triggered when a new ProcessConfig is added to the job envars table. It handles the setup
 // of the new job queue along with a DLQ for the ProcessConfig.
 func handle(ctx context.Context, event events.DynamoDBEvent) error {
-	jobConfig, err := parseProcessConfig(event)
+	processConfig, err := parseProcessConfig(event)
 	if err != nil {
-		return errors.Wrapf(err, "could not parse dynamo event")
+		return errors.Wrapf(err, "failed to parse dynamo event")
 	}
-	if err := cqhandler.New(dbSvc, sqsSvc, envs.processConfigsTableName, envs.envName).Handle(ctx, jobConfig); err != nil {
-		return errors.Wrapf(err, "failed to queue creation for job envars %s", jobConfig.ID)
+	if err := cqhandler.New(dbSvc, sqsSvc, envs.processConfigsTableName, envs.envName).Handle(ctx, processConfig); err != nil {
+		return errors.Wrapf(err, "failed to handle queue setup for process config %s", processConfig.ID)
 	}
 	return nil
 }
