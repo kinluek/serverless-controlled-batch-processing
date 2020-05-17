@@ -31,7 +31,7 @@ each customer may have access tokens which have different rate limits.
 Another scenario might be that each task group fetches data from a different website, each website will have their own capacity to handle requests,
 and you may end up DDoSing some websites that can't handle your throughput. 
 
-There are a number of ways this can be solved:
+There are a number of ways this can be solved, here are a few of them:
  1. Let the rate limit be hit, make a note of it in some data store and handle the task later
     - This we will need as part of any solution, as there is still a chance tasks will fail even with controlled concurrency. 
  2. Use distributed counters and locks for each task group, to make sure none of them can go over the limit.
@@ -44,7 +44,7 @@ There are a number of ways this can be solved:
     - although this will stop the tasks going over their concurrency limit, task groups still have to share processing power with other groups on the same partition, meaning they still
     don't get the full amount of concurrency they can handle.
  5. MY EXPERIMENTAL SOLUTION: use a separate SQS queue and Lambda function for each task group.
-    - Here there is even more infracture to manage, but with the right setup, this can be easily managed.
+    - Here there is even more infracture to manage, but with the right setup, this can be easily managed (in theory).
 
 ## My Experimental Solution - (WIP)
 Use a separate queue and Lambda function for each task group, that are created through triggers and events when new process configurations are register.
