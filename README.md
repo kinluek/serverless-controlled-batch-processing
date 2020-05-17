@@ -84,8 +84,7 @@ For example, lets say at most you have to process 50 batches of work at once, so
 limited to 10. Pipelines could also be removed and replaced with others if they are not being used, since we are just working with SQS and Lambda it would take seconds to swap them out, meaning we could 
 have a lot more than the 3800 job configurations, if we are not having to use them all at once. Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
-  
 
 ## TODOS
-
+- [ ] Create lucid chart diagram of the architecture.
 - [x] Trigger: Create SQS queues when job configs are added to the job config DyanamoDB table.
