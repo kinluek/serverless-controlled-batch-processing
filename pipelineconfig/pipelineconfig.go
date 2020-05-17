@@ -2,8 +2,6 @@ package pipelineconfig
 
 import (
 	"context"
-	"encoding/json"
-	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
@@ -47,29 +45,4 @@ func List(ctx context.Context, db *dynamodb.DynamoDB, tableName string) ([]Pipel
 		return nil, errors.Wrapf(err, "failed to unmarshal configs from table %s", tableName)
 	}
 	return taskSets, nil
-}
-
-// ParseNewRecord parses the new PipelineConfig from a DynamoDB event record.
-func ParseNewRecord(record events.DynamoDBEventRecord) (PipelineConfig, error) {
-	var config PipelineConfig
-	if err := unmarshalStreamImage(record.Change.NewImage, &config); err != nil {
-		return config, errors.Wrap(err, "failed to parse dynamo record")
-	}
-	return config, nil
-}
-
-func unmarshalStreamImage(attribute map[string]events.DynamoDBAttributeValue, out interface{}) error {
-	attrMap := make(map[string]*dynamodb.AttributeValue)
-	for k, v := range attribute {
-		var attr dynamodb.AttributeValue
-		bytes, err := v.MarshalJSON()
-		if err != nil {
-			return err
-		}
-		if err := json.Unmarshal(bytes, &attr); err != nil {
-			return err
-		}
-		attrMap[k] = &attr
-	}
-	return dynamodbattribute.UnmarshalMap(attrMap, out)
 }

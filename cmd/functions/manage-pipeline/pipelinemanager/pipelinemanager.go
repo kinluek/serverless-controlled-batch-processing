@@ -42,9 +42,6 @@ func (h *PipelineManager) Handle(ctx context.Context, instruction Instruction) e
 }
 
 func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) error {
-
-	// TODO: add cases for update and delete operations.
-	// TODO: attach lambdas
 	switch instruction.Operation {
 	case Add:
 		return h.createQueue(ctx, instruction.Config.ID)

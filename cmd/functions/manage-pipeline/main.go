@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/kinluek/serverless-controlled-batch-processing/cmd/functions/manage-pipeline/pipelinemanager"
 	"github.com/kinluek/serverless-controlled-batch-processing/env"
-	"github.com/kinluek/serverless-controlled-batch-processing/pipelineconfig"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"os"
@@ -71,8 +70,4 @@ func loadEnvars() envars {
 		panic(err)
 	}
 	return envars{tableName, envName}
-}
-
-func parsePipelineConfig(event events.DynamoDBEvent) (pipelineconfig.PipelineConfig, error) {
-	return pipelineconfig.ParseNewRecord(event.Records[0])
 }
