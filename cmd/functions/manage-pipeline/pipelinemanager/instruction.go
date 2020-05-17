@@ -19,7 +19,7 @@ const (
 // Instruction tells the PipelineManager how to mange the pipeline.
 type Instruction struct {
 	Operation operation
-	Config    *pipelineconfig.PipelineConfig
+	Config    pipelineconfig.PipelineConfig
 }
 
 // MakeInstructionFromStreamRecord takes a DynamoDBEventRecord and makes an Instruction from it,
@@ -45,7 +45,7 @@ func makeInstructionAdd(newImage map[string]events.DynamoDBAttributeValue) (Inst
 	if err := eventutil.UnmarshalDynamoAttrMap(newImage, &config); err != nil {
 		return Instruction{}, err
 	}
-	return Instruction{Operation: Add, Config: &config}, nil
+	return Instruction{Operation: Add, Config: config}, nil
 }
 
 func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
@@ -68,7 +68,7 @@ func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttribut
 	if nc.SQSVisibilityTimeoutSecs != oc.SQSVisibilityTimeoutSecs {
 		uc.SQSVisibilityTimeoutSecs = nc.SQSVisibilityTimeoutSecs
 	}
-	return Instruction{Operation: Update, Config: &uc}, nil
+	return Instruction{Operation: Update, Config: uc}, nil
 }
 
 func makeInstructionDelete(oldImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
@@ -77,7 +77,7 @@ func makeInstructionDelete(oldImage map[string]events.DynamoDBAttributeValue) (I
 		return Instruction{}, err
 	}
 	dc := pipelineconfig.PipelineConfig{ID: oc.ID}
-	return Instruction{Operation: Delete, Config: &dc}, nil
+	return Instruction{Operation: Delete, Config: dc}, nil
 }
 
 func makeInstructionError() (Instruction, error) {

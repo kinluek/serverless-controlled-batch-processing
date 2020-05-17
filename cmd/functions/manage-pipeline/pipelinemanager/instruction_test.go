@@ -21,7 +21,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-new-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Add,
-				Config: &pipelineconfig.PipelineConfig{
+				Config: pipelineconfig.PipelineConfig{
 					ID:                       "new-config-id",
 					LambdaConcurrencyLimit:   5,
 					LambdaTimeoutSes:         10,
@@ -34,7 +34,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-update-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Update,
-				Config: &pipelineconfig.PipelineConfig{
+				Config: pipelineconfig.PipelineConfig{
 					ID:                       "update-config-id",
 					LambdaConcurrencyLimit:   12,
 					LambdaTimeoutSes:         5,
@@ -47,7 +47,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-delete-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Delete,
-				Config: &pipelineconfig.PipelineConfig{
+				Config: pipelineconfig.PipelineConfig{
 					ID: "delete-config-id",
 				},
 			},
