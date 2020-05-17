@@ -1,27 +1,25 @@
 # Serverless Processing - Controlling Concurrency (JUST FOR FUN! WIP)
 
-An experimental project started out of boredom and curiosity, the project sets out to see how we can use Lambda, with it's managed concurrency and event driven architectures in AWS, to manage thousands of work queue pipelines to provide optimal throughput for rate limited workloads.
+An experimental project started out of boredom and curiosity, the project sets out to see how we can use AWS Lambda with it's managed concurrency, and event driven architectures to manage thousands of work queue pipelines to provide optimal throughput for rate limited workloads.
 
 Before you delve into this, it is important to know, that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
 
 ## The Problem
 
-Imagine in your company, you have a Lambda function that processes simple tasks for all your customers, which seems fairly standard I guess?
-Now lets say the producer of these tasks just puts them into the same queue along with other customer's tasks and are consumed by the Lambda function. 
-For each customer you also want to configure the rate at which these batches are processed for
-each customer individually, how would you do that with Lambda? 
+### Sharing Queues
 
-The thing is with Lambda, you can only set the concurrency limit per function, so if you set the limit to be 10,
-that means 10 tasks can be processed at a time, and each customer will get an undetermined fraction of that.
+In queue based architectures, tasks are added to queues for them to be processed asynchronously by what ever is consuming the queue on the other side.
+The problem arises when you have multiple groups of tasks all being processed from the same queue, and you want each task group to have their own throughput rate. 
+If you wanted each task.
 
 For example, given a queue: ->[A, B, C, C, C, C, A, A, B]->
- - Lambda concurrency of 4 
+ - consumer concurrency of 4 
  - process time of 1 second
  - rate limit of 1/sec for B tasks
  - rate limit of 2/sec for A tasks
  - rate limit of 2/sec for C tasks
 
-When Lambda starts to pull tasks off this queue, the first 4 will be pulled off and processed at once, 1 B, 2 A's and 1 C,
+When the consumer starts to pull tasks off the queue, the first 4 will be pulled off and processed at once, 1 B, 2 A's and 1 C,
 all falling within their rate limits, this is fine. Once the function has finished processing those tasks, the next 4 will be pulled off.
 This time, 3 C's and 1 B, there are now 3 C tasks being processed at once, which exceeds its rate limit.
 
@@ -31,24 +29,38 @@ each customer may have access tokens which have different rate limits.
 Another scenario might be that each task group fetches data from a different website, each website will have their own capacity to handle requests,
 and you may end up DDoSing some websites that can't handle your throughput. 
 
-There are a number of ways this can be solved, here are a few of them:
- 1. Let the rate limit be hit, make a note of it in some data store and handle the task later
-    - This we will need as part of any solution, as there is still a chance tasks will fail even with controlled concurrency. 
- 2. Use distributed counters and locks for each task group, to make sure none of them can go over the limit.
-    - The problem here is that distributed locks and counters add complexity and are not easily achieved.
-    - Also, Lambdas would still have to pull the task off the queue to find out whether they are at the limit, and therefore using up resources.
- 3. Don't use Lambda, process all your tasks through one server, where mutex locks and atomic counters are much easier to implement.
-    - Here we would have scalability issues, as we can only scale vertically so far.
- 4. Partition your tasks based on rate/concurrency limits and send them to different consumers that have that use the same amount of concurrency.
-    - Here you have to manage more infrastructure.
-    - although this will stop the tasks going over their concurrency limit, task groups still have to share processing power with other groups on the same partition, meaning they still
-    don't get the full amount of concurrency they can handle.
- 5. MY EXPERIMENTAL SOLUTION: use a separate SQS queue and Lambda function for each task group.
-    - Here there is even more infracture to manage, but with the right setup, this can be easily managed (in theory).
+There are a number of ways that you can limit the number of concurrent processes for each task group, here are a few:
+ - Let the rate limit be hit, make a note of it in some data store and handle the task later
+    - This we will need as part of any solution, as there is still a chance tasks will fail even with controlled concurrency.  
+ - In a distributed system you could try implement distributed atomic counters and locks to keep track of the number of tasks you are processing.
+    - The problem here is that this would be extremely difficult to implement, the atomic counting could be achieved, but with the locking part on top, I'm not sure about that.
+ - Don't use a distributed system, process all your tasks through one server, where mutex locks and atomic counters are much easier to implement.
+    - here we would have scalability issues.
+ - Same as above, but have the tasks partitioned based on task group ID, so that we can scale the system out horizontally.
+
+In all the ways described above, you may be able to stop the task groups from being processed over their rate limit, but you can't guarantee that they will
+be processed at their maximum throughput. This is because the tasks are sharing resources (queues and consumers). 
+
+For task groups to be processed with constant throughput, they would each need their own queue and consumer. Here the concurrency can be set on the consumer rather than using counters to track 
+how many tasks of the same group are being processed at once. If all the tasks coming in are from the same group, then you know that they will be processed at the rate set by the concurrency of the platform.
+
+In a non-serverless world, this may be very expensive to implement if you have thousands of task groups, as you would have to pay for the running costs for each queue and consumer.
+In the serverless world, it would cost you next to nothing, 1 million tasks being sent through 1 AWS SQS queue and consumed by 1 AWS Lambda function, would cost you the same as the 1 million tasks
+going through 1000 SQS queues each with their own Lambda consumer. Lambda also allows you to easily configure the concurrency limit for each function.
+
 
 ## My Experimental Solution - (WIP)
-Use a separate queue and Lambda function for each task group, that are created through triggers and events when new process configurations are register.
-This way each set of tasks can be processed at their maximum through put consistently, without being blocked by tasks from other groups in the queue.
+
+So as you can probably tell from above, my solution is to have a separate task pipeline made up of an SQS queue and Lambda handler function for each
+task group. 
+
+The problem here is that you now have to manage potentially 1000s of task pipelines, and this could get out of hand really quickly. 
+
+What I'm going to attempt in this project, is set up an event driven system where these pipelines are automatically created, updated and removed etc when I add, update or remove a
+task config object from a DynamoDB table.
+
+I also want to be able to update my consumer code in one place and then for it to update all my active consumers. The consumers should all be running the same code
+but with different concurrency settings.
 
 Here's what we'll need:
  - S3 bucket to hold the source code that Lambda functions will be created from. 
@@ -79,10 +91,14 @@ Resource Limitations:
   - 1000 concurrency limit across all Lambda functions per account per region, this is also a soft limit which can be increased.
     So, if we stayed at this limit, even if we did set up 3800 pipelines, each with their own concurrency, we still wouldn't even be able to run all of them at once. 
 
-Given these limits, the best use case for this architecture would be for work loads that come in batches of tasks, that have a maximum rate in which they can be processed.
+Given these limits, the best kind of use case for this architecture would be for workloads that come in batches of tasks, that have a maximum rate in which they can be processed.
 For example, lets say at most you have to process 50 batches of work at once, some batches could be configured to work through their tasks 100 at a time, while others may have to be 
-limited to 10. Pipelines could also be removed and replaced with others if they are not being used, since we are just working with SQS and Lambda it would take seconds to swap them out, meaning we could 
-have a lot more than the 3800 job configurations, if we are not having to use them all at once. Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
+limited to 10. 
+
+Pipelines could also be removed and replaced with others if they are not being used, since we are just working with SQS and Lambda it would take seconds to swap them out, meaning we could 
+have a lot more than the 3800 job configurations, if we are not having to use them all at once, you could set one directly before you use it, then remove it after. 
+
+Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
 
 
