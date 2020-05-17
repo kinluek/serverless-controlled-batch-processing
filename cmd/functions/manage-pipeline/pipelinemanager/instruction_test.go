@@ -47,7 +47,9 @@ func TestParseNewRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-delete-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Delete,
-				Config:    nil,
+				Config: &pipelineconfig.PipelineConfig{
+					ID: "delete-config-id",
+				},
 			},
 		},
 	}

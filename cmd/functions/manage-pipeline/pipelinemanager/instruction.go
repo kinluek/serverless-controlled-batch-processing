@@ -34,7 +34,7 @@ func MakeInstructionFromStreamRecord(record events.DynamoDBEventRecord) (Instruc
 	case Update:
 		return makeInstructionUpdate(newImage, oldImage)
 	case Delete:
-		return makeInstructionDelete()
+		return makeInstructionDelete(oldImage)
 	default:
 		return makeInstructionError()
 	}
@@ -71,8 +71,13 @@ func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttribut
 	return Instruction{Operation: Update, Config: &uc}, nil
 }
 
-func makeInstructionDelete() (Instruction, error) {
-	return Instruction{Operation: Delete}, nil
+func makeInstructionDelete(oldImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
+	var oc pipelineconfig.PipelineConfig
+	if err := eventutil.UnmarshalDynamoAttrMap(oldImage, &oc); err != nil {
+		return Instruction{}, err
+	}
+	dc := pipelineconfig.PipelineConfig{ID: oc.ID}
+	return Instruction{Operation: Delete, Config: &dc}, nil
 }
 
 func makeInstructionError() (Instruction, error) {

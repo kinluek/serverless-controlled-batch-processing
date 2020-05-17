@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/kinluek/serverless-controlled-batch-processing/pipelineconfig"
 	"github.com/kinluek/serverless-controlled-batch-processing/queue"
 )
 
 // HandlerFunc is a function that can handle a PipelineConfig.
-type HandlerFunc func(ctx context.Context, config pipelineconfig.PipelineConfig) error
+type HandlerFunc func(ctx context.Context, instruction Instruction) error
 
 // PipelineManager handles the creation, configuration, updating and removal of pipelines.
 type PipelineManager struct {
@@ -37,13 +36,13 @@ func (h *PipelineManager) Use(mids ...Middleware) {
 }
 
 // Handle takes PipelineConfig and manages the operations accordingly.
-func (h *PipelineManager) Handle(ctx context.Context, config pipelineconfig.PipelineConfig) error {
+func (h *PipelineManager) Handle(ctx context.Context, instruction Instruction) error {
 	hf := wrapMiddleware(h.handle, h.mids...)
-	return hf(ctx, config)
+	return hf(ctx, instruction)
 }
 
-func (h *PipelineManager) handle(ctx context.Context, config pipelineconfig.PipelineConfig) error {
-	return h.createQueue(ctx, config.ID)
+func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) error {
+	return h.createQueue(ctx, instruction.Config.ID)
 }
 
 func (h *PipelineManager) createQueue(ctx context.Context, id string) error {

@@ -2,7 +2,6 @@ package pipelinemanager
 
 import (
 	"context"
-	"github.com/kinluek/serverless-controlled-batch-processing/pipelineconfig"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -38,17 +37,17 @@ func Log(log *logrus.Logger) Middleware {
 	m := func(before HandlerFunc) HandlerFunc {
 
 		// Handler to return.
-		h := func(ctx context.Context, config pipelineconfig.PipelineConfig) error {
+		h := func(ctx context.Context, instruction Instruction) error {
 			const (
-				msgTemplateFail    = "fail - handling queue setup for process config %s"
-				msgTemplateSuccess = "success - handling queue setup for process config %s"
+				msgTemplateFail    = "fail - handling queue setup for process instruction %s"
+				msgTemplateSuccess = "success - handling queue setup for process instruction %s"
 			)
-			if err := before(ctx, config); err != nil {
-				err := errors.Wrapf(err, msgTemplateFail, config.ID)
-				log.WithFields(getLogFields(config, statusFail)).Error(err.Error())
+			if err := before(ctx, instruction); err != nil {
+				err := errors.Wrapf(err, msgTemplateFail, instruction.Config.ID)
+				log.WithFields(getLogFields(instruction, statusFail)).Error(err.Error())
 				return err
 			}
-			log.WithFields(getLogFields(config, statusSuccess)).Infof(msgTemplateSuccess, config.ID)
+			log.WithFields(getLogFields(instruction, statusSuccess)).Infof(msgTemplateSuccess, instruction.Config.ID)
 			return nil
 		}
 		return h
@@ -56,9 +55,9 @@ func Log(log *logrus.Logger) Middleware {
 	return m
 }
 
-func getLogFields(config pipelineconfig.PipelineConfig, status string) logrus.Fields {
+func getLogFields(instruction Instruction, status string) logrus.Fields {
 	return logrus.Fields{
-		"process_config_id": config.ID,
+		"process_config_id": instruction.Config.ID,
 		"status":            status,
 	}
 }
