@@ -13,13 +13,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// config holds the configuration parameters for the application.
-type config struct {
-	processConfigsTableName string // env:DYNAMO_PROCESS_CONFIGS_TABLE_NAME
-	envName                 string // env:ENV_NAME
-}
-
-var cfg config
+var envs envars
 var sess *session.Session
 var dbSvc *dynamodb.DynamoDB
 var sqsSvc *sqs.SQS
@@ -29,18 +23,18 @@ func init() {
 	sess = session.Must(session.NewSession())
 	dbSvc = dynamodb.New(sess)
 	sqsSvc = sqs.New(sess)
-	cfg = loadConfig()
+	envs = loadEnvars()
 }
 
-// The Lambda function to be triggered when a new ProcessConfig is added to the job config table. It handles the setup
+// The Lambda function to be triggered when a new ProcessConfig is added to the job envars table. It handles the setup
 // of the new job queue along with a DLQ for the ProcessConfig.
 func handle(ctx context.Context, event events.DynamoDBEvent) error {
-	jobConfig, err := parseJobConfig(event)
+	jobConfig, err := parseProcessConfig(event)
 	if err != nil {
 		return errors.Wrapf(err, "could not parse dynamo event")
 	}
-	if err := cqhandler.New(dbSvc, sqsSvc, cfg.processConfigsTableName, cfg.envName).Handle(ctx, jobConfig); err != nil {
-		return errors.Wrapf(err, "failed to queue creation for job config %s", jobConfig.ID)
+	if err := cqhandler.New(dbSvc, sqsSvc, envs.processConfigsTableName, envs.envName).Handle(ctx, jobConfig); err != nil {
+		return errors.Wrapf(err, "failed to queue creation for job envars %s", jobConfig.ID)
 	}
 	return nil
 }
@@ -49,9 +43,15 @@ func main() {
 	lambda.Start(handle)
 }
 
-// loadConfig loads the environment variables needed for the configuration
-// of the program, any problems with loading the config will cause the program to panic.
-func loadConfig() config {
+// envars holds the configuration parameters for the application.
+type envars struct {
+	processConfigsTableName string // env:DYNAMO_PROCESS_CONFIGS_TABLE_NAME
+	envName                 string // env:ENV_NAME
+}
+
+// loadEnvars loads the environment variables needed for the configuration
+// of the program, any problems with loading the envars will cause the program to panic.
+func loadEnvars() envars {
 	const (
 		EnvarTableName = "DYNAMO_PROCESS_CONFIGS_TABLE_NAME"
 		EnvarEnvName   = "ENV_NAME"
@@ -64,9 +64,9 @@ func loadConfig() config {
 	if err != nil {
 		panic(err)
 	}
-	return config{tableName, envName}
+	return envars{tableName, envName}
 }
 
-func parseJobConfig(event events.DynamoDBEvent) (processconfigs.ProcessConfig, error) {
+func parseProcessConfig(event events.DynamoDBEvent) (processconfigs.ProcessConfig, error) {
 	return processconfigs.ParseNewRecord(event.Records[0])
 }
