@@ -34,7 +34,6 @@ func Put(ctx context.Context, db *dynamodb.DynamoDB, tableName string, config Pi
 	return nil
 }
 
-
 // List Lists all the ProcessConfigs in the Dynamo DB table.
 // NOTE: do not use Scan operation in production! This is a very expensive call,
 // that is being used only for demo purposes for simplicity.
@@ -50,7 +49,6 @@ func List(ctx context.Context, db *dynamodb.DynamoDB, tableName string) ([]Pipel
 	return taskSets, nil
 }
 
-
 // ParseNewRecord parses the new PipelineConfig from a DynamoDB event record.
 func ParseNewRecord(record events.DynamoDBEventRecord) (PipelineConfig, error) {
 	var config PipelineConfig
@@ -60,12 +58,12 @@ func ParseNewRecord(record events.DynamoDBEventRecord) (PipelineConfig, error) {
 	return config, nil
 }
 
-
 func unmarshalStreamImage(attribute map[string]events.DynamoDBAttributeValue, out interface{}) error {
 	attrMap := make(map[string]*dynamodb.AttributeValue)
 	for k, v := range attribute {
 		var attr dynamodb.AttributeValue
-		bytes, err := v.MarshalJSON(); if err != nil {
+		bytes, err := v.MarshalJSON()
+		if err != nil {
 			return err
 		}
 		if err := json.Unmarshal(bytes, &attr); err != nil {

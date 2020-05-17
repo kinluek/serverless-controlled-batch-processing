@@ -6,7 +6,7 @@
         "ApproximateCreationDateTime": 1589723447,
         "Keys": {
           "id": {
-            "S": "new-config-full"
+            "S": "delete-config-id"
           }
         },
         "OldImage": {
@@ -14,7 +14,7 @@
             "N": "12"
           },
           "id": {
-            "S": "new-config-full"
+            "S": "delete-config-id"
           },
           "lambda_timeout_secs": {
             "N": "5"
