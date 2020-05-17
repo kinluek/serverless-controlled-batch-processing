@@ -42,13 +42,13 @@ func init() {
 
 // The Lambda function to be triggered when changes happen on the pipeline configuration DynamoDB table.
 func handle(ctx context.Context, event events.DynamoDBEvent) error {
-	pipelineConfig, err := parsePipelineConfig(event)
+	instruction, err := pipelinemanager.MakeInstructionFromStreamRecord(event.Records[0])
 	if err != nil {
-		return errors.Wrapf(err, "failed to parse dynamo event")
+		return errors.Wrap(err, "failed to make instruction from event event")
 	}
 	h := pipelinemanager.New(dbSvc, sqsSvc, envs.tableName, envs.envName)
 	h.Use(pipelinemanager.Log(logger))
-	return h.Handle(ctx, pipelineConfig)
+	return h.Handle(ctx, instruction)
 }
 
 func main() {
