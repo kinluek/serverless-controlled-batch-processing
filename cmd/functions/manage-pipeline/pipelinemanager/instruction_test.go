@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func TestParseNewRecord(t *testing.T) {
+func TestMakeInstructionFromStreamRecord(t *testing.T) {
 	tests := []struct {
 		name string
 		file string
