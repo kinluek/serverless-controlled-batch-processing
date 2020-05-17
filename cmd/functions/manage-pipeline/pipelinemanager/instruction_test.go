@@ -58,12 +58,6 @@ func TestParseNewRecord(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not parse instruction from record: %v", err)
 			}
-			//if !reflect.DeepEqual(instruction, tt.want) {
-			//	t.Log("ConcurrencyLimits:", instruction.Config.LambdaConcurrencyLimit, tt.want.Config.LambdaConcurrencyLimit)
-			//	t.Log("LambdaTimeout:", instruction.Config.LambdaTimeoutSes, tt.want.Config.LambdaTimeoutSes)
-			//	t.Log("VisibilityTimeout:", instruction.Config.SQSVisibilityTimeoutSecs, tt.want.Config.SQSVisibilityTimeoutSecs)
-			//	t.Errorf("MakeInstructionFromStreamRecord() got = %v, want %v", instruction, tt.want)
-			//}
 			assert.Equal(t, instruction, tt.want)
 		})
 	}
