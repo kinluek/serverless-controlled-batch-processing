@@ -14,8 +14,7 @@ const (
 // Middleware is a function that wraps a HandlerFunc to enhance its capabilities.
 type Middleware func(h HandlerFunc) HandlerFunc
 
-// wrapMiddleware creates a new message handler by wrapping the middleware around
-// the given handler. The middlewares will be executed  in the order they are provided.
+// wrapMiddleware applies the middleware so that they will be executed in the order they are provided.
 func wrapMiddleware(handler HandlerFunc, middleware ...Middleware) HandlerFunc {
 
 	// start wrapping the messageHandler from the end of the outerMiddleware
