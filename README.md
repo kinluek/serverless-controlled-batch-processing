@@ -1,7 +1,6 @@
 # Serverless Processing - Controlling Concurrency (JUST FOR FUN! WIP)
 
-An experimental project started out of boredom and curiosity, on how we can configure optimal throughput/concurrency for different batches of jobs going through
-the same Lambda handler code.
+An experimental project started out of boredom and curiosity, the project sets out to see how we can piece together serverless and event driven architectures to configure optimal throughput/concurrency for different batches of jobs using a single Lambda handler (not quite the same handler, but the same handler code...).
 
 Before you delve into this, it is important to know, that this project is just for fun and anything you decide to take from this, you take at your own risk.
 
@@ -42,9 +41,10 @@ There are a number of ways this can be solved:
     - Here we would have scalability issues, as we can only scale vertically so far.
  4. Partition your tasks based on rate/concurrency limits and send them to different consumers that have that use the same amount of concurrency.
     - Here you have to manage more infrastructure.
-    - although this will stop the tasks going over their concurrency limit, task groups still have to share with other groups, meaning they still
+    - although this will stop the tasks going over their concurrency limit, task groups still have to share processing power with other groups on the same partition, meaning they still
     don't get the full amount of concurrency they can handle.
  5. MY EXPERIMENTAL SOLUTION: use a separate SQS queue and Lambda function for each task group.
+    - Here there is even more infracture to manage, but with the right setup, this can be easily managed.
 
 ## My Experimental Solution - (WIP)
 Use a separate queue and Lambda function for each task group, that are created through triggers and events when new process configurations are register.
@@ -81,7 +81,7 @@ Resource Limitations:
 
 Given these limits, the best use case for this architecture would be for work loads that come in batches of tasks, that have a maximum rate in which they can be processed.
 For example, lets say at most you have to process 50 batches of work at once, some batches could be configured to work through their tasks 100 at a time, while others may have to be 
-limited to 10. Pipelines could also be removed and replaced with others if they are not being, since we are just working with SQS and Lambda it would take seconds to swap them out, meaning we could 
+limited to 10. Pipelines could also be removed and replaced with others if they are not being used, since we are just working with SQS and Lambda it would take seconds to swap them out, meaning we could 
 have a lot more than the 3800 job configurations, if we are not having to use them all at once. Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
   
