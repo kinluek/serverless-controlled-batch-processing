@@ -2,7 +2,7 @@
 
 An experimental project started out of boredom and curiosity, the project sets out to see how we can use AWS Lambda with it's managed concurrency, and event driven architectures to manage thousands of work queue pipelines to provide optimal throughput for rate limited workloads.
 
-Before you delve into this, it is important to know, that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
+Before you delve into this, it is important to know that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
 
 ## The Problem
 
@@ -10,7 +10,6 @@ Before you delve into this, it is important to know, that this project is just f
 
 In queue based architectures, tasks are added to queues for them to be processed asynchronously by what ever is consuming the queue on the other side.
 The problem arises when you have multiple groups of tasks all being processed from the same queue, and you want each task group to have their own throughput rate. 
-If you wanted each task.
 
 For example, given a queue: ->[A, B, C, C, C, C, A, A, B]->
  - consumer concurrency of 4 
@@ -45,9 +44,9 @@ For task groups to be processed with constant throughput, they would each need t
 how many tasks of the same group are being processed at once. If all the tasks coming in are from the same group, then you know that they will be processed at the rate set by the concurrency of the platform.
 
 In a non-serverless world, this may be very expensive to implement if you have thousands of task groups, as you would have to pay for the running costs for each queue and consumer.
+
 In the serverless world, it would cost you next to nothing, 1 million tasks being sent through 1 AWS SQS queue and consumed by 1 AWS Lambda function, would cost you the same as the 1 million tasks
 going through 1000 SQS queues each with their own Lambda consumer. Lambda also allows you to easily configure the concurrency limit for each function.
-
 
 ## My Experimental Solution - (WIP)
 
@@ -65,9 +64,9 @@ but with different concurrency settings.
 Here's what we'll need:
  - S3 bucket to hold the source code that Lambda functions will be created from. 
  - SNS topic that the S3 bucket will publish events to on S3 object updates.
- - Source code for your task processor Lambda function in the S3 bucket - we will create an instance of the Lambda for each task group
- - Source code for a Lambda function which gets subscribed to an SNS topic that delivers object update events from the S3 bucket when the task processor source code is updated.
-   We will create an instance of this function along with every task processor function, so that we can update lambda source codes easily,
+ - Source code for your Lambda function consumer in the S3 bucket - we will create an instance of the Lambda for each task group
+ - Source code for a Lambda function which gets subscribed to the SNS topic that delivers object update events from the S3 bucket when the consumer code is updated.
+   We will create an instance of this function along with every consumer function, so that we can update lambda source codes easily,
    as by default, your Lambda function does not automatically update when you update the source code for it in S3.
  - A DynamoDB table to hold process configurations for each task group, with streams enabled.
  - A stream listener Lambda function, which listens to the DyamoDB streams, and creates new instances of the task processor function along with SQS queues for it to pull from when new configurations are added.
