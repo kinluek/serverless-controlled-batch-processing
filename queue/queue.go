@@ -17,10 +17,10 @@ const (
 	defaultRedriveCount = 2
 )
 
-// CreateQueueWithDLQ will create a queue along with another queue which will act as the
+// CreateWithDLQ will create a queue along with another queue which will act as the
 // dead letter queue, the dead letter queue will be named as the original queue name with
-// ".dlq" extension.
-func CreateQueueWithDLQ(ctx context.Context, svc *sqs.SQS, name string) error {
+// "-dlq" suffix.
+func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string) error {
 	dlqOutput, err := createQueue(ctx, svc, name+extensionDQL, nil)
 	if err != nil {
 		return errors.Wrapf(err, "creating dlq for %v", name)

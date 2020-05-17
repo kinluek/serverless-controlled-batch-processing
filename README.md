@@ -85,6 +85,8 @@ limited to 10. Pipelines could also be removed and replaced with others if they 
 have a lot more than the 3800 job configurations, if we are not having to use them all at once. Finally, since this is all serverless, even with all these pipelines set up, you still won't have to pay a penny
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
 
+
+
 ### NOTES
 
 - Add Lucid Chart Diagram

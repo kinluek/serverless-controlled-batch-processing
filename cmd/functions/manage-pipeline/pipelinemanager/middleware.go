@@ -1,8 +1,8 @@
-package cqhandler
+package pipelinemanager
 
 import (
 	"context"
-	"github.com/kinluek/serverless-controlled-batch-processing/processconfigs"
+	"github.com/kinluek/serverless-controlled-batch-processing/pipelineconfig"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -12,8 +12,7 @@ const (
 	statusFail    = "fail"
 )
 
-type HandlerFunc func(ctx context.Context, config processconfigs.ProcessConfig) error
-
+// Middleware is a function that wraps a HandlerFunc to enhance its capabilities.
 type Middleware func(h HandlerFunc) HandlerFunc
 
 // wrapMiddleware creates a new message handler by wrapping the middleware around
@@ -29,33 +28,35 @@ func wrapMiddleware(handler HandlerFunc, middleware ...Middleware) HandlerFunc {
 			handler = mw(handler)
 		}
 	}
-
 	return handler
 }
 
+// Log is a takes a logger and returns a middleware function that provides logging capabilities.
 func Log(log *logrus.Logger) Middleware {
 
-	// Middleware to return
-	f := func(before HandlerFunc) HandlerFunc {
+	// Middleware to return.
+	m := func(before HandlerFunc) HandlerFunc {
 
-		// Wrapped handler
-		h := func(ctx context.Context, config processconfigs.ProcessConfig) error {
+		// Handler to return.
+		h := func(ctx context.Context, config pipelineconfig.PipelineConfig) error {
+			const (
+				msgTemplateFail    = "fail - handling queue setup for process config %s"
+				msgTemplateSuccess = "success - handling queue setup for process config %s"
+			)
 			if err := before(ctx, config); err != nil {
-				err := errors.Wrapf(err, "fail - handling queue setup for process config %s", config.ID)
+				err := errors.Wrapf(err, msgTemplateFail, config.ID)
 				log.WithFields(getLogFields(config, statusFail)).Error(err.Error())
 				return err
 			}
-			log.WithFields(getLogFields(config, statusSuccess)).Infof("success - handling queue setup for process config %s", config.ID)
+			log.WithFields(getLogFields(config, statusSuccess)).Infof(msgTemplateSuccess, config.ID)
 			return nil
 		}
 		return h
 	}
-	return f
+	return m
 }
 
-
-
-func getLogFields(config processconfigs.ProcessConfig, status string) logrus.Fields {
+func getLogFields(config pipelineconfig.PipelineConfig, status string) logrus.Fields {
 	return logrus.Fields{
 		"process_config_id": config.ID,
 		"status":            status,

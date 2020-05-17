@@ -1,0 +1,37 @@
+{
+  "Records": [
+    {
+      "awsRegion": "eu-west-2",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1589723065,
+        "Keys": {
+          "id": {
+            "S": "new-config-full"
+          }
+        },
+        "NewImage": {
+          "concurrency_limit": {
+            "N": "5"
+          },
+          "id": {
+            "S": "new-config-full"
+          },
+          "lambda_timeout_secs": {
+            "N": "10"
+          },
+          "sqs_visibility_timeout_secs": {
+            "N": "15"
+          }
+        },
+        "SequenceNumber": "200000000000091008510",
+        "SizeBytes": 103,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventID": "c8d449fb685da84e8d6f97b4d2c933e4",
+      "eventName": "INSERT",
+      "eventSource": "aws:dynamodb",
+      "eventVersion": "1.1",
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-2:999999999999:table/pipeline-configs-dev/stream/2020-05-17T13:22:12.477"
+    }
+  ]
+}

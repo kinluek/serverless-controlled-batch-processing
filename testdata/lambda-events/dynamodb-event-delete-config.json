@@ -1,0 +1,37 @@
+{
+  "Records": [
+    {
+      "awsRegion": "eu-west-2",
+      "dynamodb": {
+        "ApproximateCreationDateTime": 1589723447,
+        "Keys": {
+          "id": {
+            "S": "new-config-full"
+          }
+        },
+        "OldImage": {
+          "concurrency_limit": {
+            "N": "12"
+          },
+          "id": {
+            "S": "new-config-full"
+          },
+          "lambda_timeout_secs": {
+            "N": "5"
+          },
+          "sqs_visibility_timeout_secs": {
+            "N": "15"
+          }
+        },
+        "SequenceNumber": "400000000000091076153",
+        "SizeBytes": 103,
+        "StreamViewType": "NEW_AND_OLD_IMAGES"
+      },
+      "eventID": "8691df584a2292953ec31bb97b173d0f",
+      "eventName": "REMOVE",
+      "eventSource": "aws:dynamodb",
+      "eventVersion": "1.1",
+      "eventSourceARN": "arn:aws:dynamodb:eu-west-2:999999999999:table/pipeline-configs-dev/stream/2020-05-17T13:22:12.477"
+    }
+  ]
+}

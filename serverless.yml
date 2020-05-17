@@ -7,7 +7,7 @@ plugins:
   - serverless-pseudo-parameters
 
 custom:
-  tableName: process-configs
+  tableName: pipeline-configs-${self:provider.stage}
 
 
 provider:
@@ -23,8 +23,8 @@ package:
     - ./bin/**
 
 functions:
-  create-queue:
-    handler: bin/create-queue
+  manage-pipeline:
+    handler: bin/manage-pipeline
     events:
       - stream:
           type: dynamodb
@@ -34,10 +34,10 @@ functions:
           enabled: true
           arn:
             Fn::GetAtt:
-              - ProcessConfigTable
+              - PipelineConfigTable
               - StreamArn
     environment:
-      DYNAMO_PROCESS_CONFIGS_TABLE_NAME: ${self:custom.tableName}
+      DYNAMO_PIPELINE_CONFIGS_TABLE_NAME: ${self:custom.tableName}
       ENV_NAME: ${self:provider.stage}
     iamRoleStatements:
       - Effect: Allow
@@ -58,7 +58,7 @@ functions:
 
 resources:
   Resources:
-    ProcessConfigTable:
+    PipelineConfigTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:custom.tableName}
