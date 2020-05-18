@@ -101,10 +101,10 @@ Resource Limitations:
     then you could just create a new topic and publish the event to two topics.
   - The is no limit on the number of Lambda functions you can have, but there is a limit on the amount of source code storage you can have, stored within the Lambda service. 
     The limit is 75GB per account per region. Even though we will only have one source of truth for our source code, Lambda actually copies this code into the Lambda service for each function that is created from it.
-    This then becomes our limiting factor. Lets for each process configuration we need 20MB of Lambda storage, that means we could have around 3800 different pipelines at most, if we used a dedicated account for these pipelines. 
+    This then becomes our limiting factor. Lets say for each process configuration we need 20MB of Lambda storage, that means we could have around 3800 different pipelines at most if we used a dedicated account for these pipelines. 
     This is a soft limit though, so this limit can be increased if you give AWS a good reason to... For this, they would probably tell you, you're using the service incorrectly and decline.
   - 1000 concurrency limit across all Lambda functions per account per region, this is also a soft limit which can be increased.
-    So, if we stayed at this limit, even if we did set up 3800 pipelines, each with their own concurrency, we still wouldn't even be able to run all of them at once. 
+    So if we stayed at this limit, even if we did set up 3800 pipelines each with their own concurrency, we still wouldn't even be able to run all of them at once, but like I say this is a soft limit, and I have heard of companies who have increased there concurrency limit up to 1 million. 
 
 Given these limits, the best kind of use case for this architecture would be for workloads that come in batches of tasks, that have a maximum rate in which they can be processed.
 For example, lets say at most you have to process 50 batches of work at once, some batches could be configured to work through their tasks 100 at a time, while others may have to be 
