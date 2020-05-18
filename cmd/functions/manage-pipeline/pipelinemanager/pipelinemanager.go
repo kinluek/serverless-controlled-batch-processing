@@ -3,7 +3,7 @@ package pipelinemanager
 import (
 	"context"
 	"fmt"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/kinluek/serverless-controlled-batch-processing/queue"
 )
@@ -13,18 +13,18 @@ type HandlerFunc func(ctx context.Context, instruction Instruction) error
 
 // PipelineManager handles the creation, configuration, updating and removal of pipelines.
 type PipelineManager struct {
-	dbSvc       *dynamodb.DynamoDB
 	sqsSvc      *sqs.SQS
+	lambdaSvc   *lambda.Lambda
 	tableName   string
 	queueSuffix string
 	mids        []Middleware
 }
 
 // New returns a new instance of PipelineManager.
-func New(dbSvc *dynamodb.DynamoDB, sqsSvc *sqs.SQS, tableName, envName string) *PipelineManager {
+func New(sqsSvc *sqs.SQS, lambdaSvc *lambda.Lambda, tableName, envName string) *PipelineManager {
 	return &PipelineManager{
-		dbSvc:       dbSvc,
 		sqsSvc:      sqsSvc,
+		lambdaSvc:   lambdaSvc,
 		tableName:   tableName,
 		queueSuffix: fmt.Sprintf("-%s-queue", envName),
 	}
@@ -44,14 +44,17 @@ func (h *PipelineManager) Handle(ctx context.Context, instruction Instruction) e
 func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) error {
 	switch instruction.Operation {
 	case Add:
-		return h.createQueue(ctx, instruction.Config.ID)
+		return h.addQueue(ctx, instruction.Config)
 	default:
 		return nil
 	}
 }
 
-func (h *PipelineManager) createQueue(ctx context.Context, id string) error {
-	return queue.CreateWithDLQ(ctx, h.sqsSvc, getQueueName(id, h.queueSuffix))
+func (h *PipelineManager) addQueue(ctx context.Context, config ConfigParams) error {
+	if err := validateAddConfig(config); err != nil {
+		return err
+	}
+	return queue.CreateWithDLQ(ctx, h.sqsSvc, getQueueName(config.ID, h.queueSuffix), *config.SQSVisibilityTimeoutSecs)
 }
 
 func getQueueName(configID, suffix string) string {

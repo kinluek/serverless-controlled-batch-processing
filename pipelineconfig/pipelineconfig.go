@@ -9,6 +9,8 @@ import (
 )
 
 // PipelineConfig holds the configurations for how the task processing pipeline should be set up.
+// For simplicity, we will limit the configurable parameters to just these values. There are many more
+// Parameters that could be added to the configuration.
 type PipelineConfig struct {
 	ID                       string `json:"id"                          dynamodbav:"id"`
 	LambdaConcurrencyLimit   int    `json:"concurrency_limit"           dynamodbav:"concurrency_limit"`

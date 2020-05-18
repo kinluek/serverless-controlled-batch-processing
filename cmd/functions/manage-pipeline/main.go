@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
+	lambdaHandler "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/kinluek/serverless-controlled-batch-processing/cmd/functions/manage-pipeline/pipelinemanager"
 	"github.com/kinluek/serverless-controlled-batch-processing/env"
@@ -21,18 +21,17 @@ type envars struct {
 }
 
 var (
-	envs   envars
-	sess   *session.Session
-	dbSvc  *dynamodb.DynamoDB
-	sqsSvc *sqs.SQS
-	logger *logrus.Logger
+	envs      envars
+	sess      *session.Session
+	sqsSvc    *sqs.SQS
+	lambdaSvc *lambda.Lambda
+	logger    *logrus.Logger
 )
 
 // use init function to save on reinitialisation costs on lambda warm starts.
 func init() {
 	envs = loadEnvars()
 	sess = session.Must(session.NewSession())
-	dbSvc = dynamodb.New(sess)
 	sqsSvc = sqs.New(sess)
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{PrettyPrint: true})
@@ -45,13 +44,13 @@ func handle(ctx context.Context, event events.DynamoDBEvent) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to make instruction from event event")
 	}
-	h := pipelinemanager.New(dbSvc, sqsSvc, envs.tableName, envs.envName)
+	h := pipelinemanager.New(sqsSvc, lambdaSvc, envs.tableName, envs.envName)
 	h.Use(pipelinemanager.Log(logger))
 	return h.Handle(ctx, instruction)
 }
 
 func main() {
-	lambda.Start(handle)
+	lambdaHandler.Start(handle)
 }
 
 // loadEnvars loads the environment variables needed for the configuration

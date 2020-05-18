@@ -6,11 +6,13 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/pkg/errors"
+	"strconv"
 )
 
 const (
-	attrNameQueueArn      = "QueueArn"
-	attrNameRedrivePolicy = "RedrivePolicy"
+	attrNameQueueArn          = "QueueArn"
+	attrNameRedrivePolicy     = "RedrivePolicy"
+	attrNameVisibilityTimeout = "VisibilityTimeout"
 
 	extensionDQL = "-dlq"
 
@@ -19,8 +21,8 @@ const (
 
 // CreateWithDLQ will create a queue along with another queue which will act as the
 // dead letter queue, the dead letter queue will be named as the original queue name with
-// "-dlq" suffix.
-func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string) error {
+// "-dlq" suffix. The visibility timeout must also be provided.
+func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) error {
 	dlqOutput, err := createQueue(ctx, svc, name+extensionDQL, nil)
 	if err != nil {
 		return errors.Wrapf(err, "creating dlq for %v", name)
@@ -29,11 +31,11 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to get arn for dlq %v", *dlqOutput.QueueUrl)
 	}
-	redriveAttr, err := makeRedriveAttributes(defaultRedriveCount, dlqArn)
+	attributes, err := makeAttributes(timeout, defaultRedriveCount, dlqArn)
 	if err != nil {
 		return err
 	}
-	if _, err := createQueue(ctx, svc, name, redriveAttr); err != nil {
+	if _, err := createQueue(ctx, svc, name, attributes); err != nil {
 		return errors.Wrapf(err, "creating queue %v", name)
 	}
 	return nil
@@ -60,12 +62,15 @@ func getAttribute(ctx context.Context, svc *sqs.SQS, queueURL, attribute string)
 	return "", errors.Errorf("attribute %v does not exist", attribute)
 }
 
-func makeRedriveAttributes(receiveCount int, dlqArn string) (map[string]*string, error) {
+func makeAttributes(visTimeout, receiveCount int, dlqArn string) (map[string]*string, error) {
 	rdp, err := makeRedrivePolicy(receiveCount, dlqArn)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to make redrive policy with queue arn %v", dlqArn)
 	}
-	return map[string]*string{attrNameRedrivePolicy: aws.String(rdp)}, nil
+	return map[string]*string{
+		attrNameRedrivePolicy:     aws.String(rdp),
+		attrNameVisibilityTimeout: aws.String(strconv.Itoa(visTimeout)),
+	}, nil
 }
 
 func makeRedrivePolicy(receiveCount int, dlqArn string) (string, error) {
