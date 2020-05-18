@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/kinluek/serverless-controlled-batch-processing/cmd/functions/manage-pipeline/pipelinemanager"
-	"github.com/kinluek/serverless-controlled-batch-processing/pipelineconfig"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -21,11 +20,11 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-new-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Add,
-				Config: pipelineconfig.PipelineConfig{
+				Config: pipelinemanager.ConfigParams{
 					ID:                       "new-config-id",
-					LambdaConcurrencyLimit:   5,
-					LambdaTimeoutSes:         10,
-					SQSVisibilityTimeoutSecs: 15,
+					LambdaConcurrencyLimit:   pInt(5),
+					LambdaTimeoutSes:         pInt(10),
+					SQSVisibilityTimeoutSecs: pInt(15),
 				},
 			},
 		},
@@ -34,11 +33,10 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-update-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Update,
-				Config: pipelineconfig.PipelineConfig{
-					ID:                       "update-config-id",
-					LambdaConcurrencyLimit:   12,
-					LambdaTimeoutSes:         5,
-					SQSVisibilityTimeoutSecs: 0,
+				Config: pipelinemanager.ConfigParams{
+					ID:                     "update-config-id",
+					LambdaConcurrencyLimit: pInt(12),
+					LambdaTimeoutSes:       pInt(5),
 				},
 			},
 		},
@@ -47,8 +45,19 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			file: "../../../../testdata/lambda-events/dynamodb-event-delete-config.json",
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Delete,
-				Config: pipelineconfig.PipelineConfig{
+				Config: pipelinemanager.ConfigParams{
 					ID: "delete-config-id",
+				},
+			},
+		},
+		{
+			name: "update with missing field",
+			file: "../../../../testdata/lambda-events/dynamodb-event-update-missing-field.json",
+			want: pipelinemanager.Instruction{
+				Operation: pipelinemanager.Update,
+				Config: pipelinemanager.ConfigParams{
+					ID:               "update-config-id",
+					LambdaTimeoutSes: pInt(5),
 				},
 			},
 		},
@@ -60,7 +69,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			if err != nil {
 				t.Fatalf("could not parse instruction from record: %v", err)
 			}
-			assert.Equal(t, instruction, tt.want)
+			assert.Equal(t, tt.want, instruction)
 		})
 	}
 }
@@ -76,4 +85,8 @@ func getRecordFromFile(t *testing.T, filePath string) events.DynamoDBEventRecord
 		t.Fatalf("failed to decode file %v: %v", filePath, err)
 	}
 	return e.Records[0]
+}
+
+func pInt(i int) *int {
+	return &i
 }
