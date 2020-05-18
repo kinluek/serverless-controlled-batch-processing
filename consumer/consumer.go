@@ -35,6 +35,7 @@ func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) error {
 	if err := attachQueue(ctx, svc, p.Name, p.QueueARN); err != nil {
 		return errors.Wrapf(err, "failed to attach consumer function %s to queue %s", p.Name, p.QueueARN)
 	}
+	return nil
 }
 
 func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, handler, roleArn, runtime string, timeout int64) error {
