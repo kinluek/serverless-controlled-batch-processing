@@ -11,12 +11,15 @@ Before you delve into this, it is important to know that this project is just fo
 In queue based architectures, tasks are added to queues for them to be processed asynchronously by what ever is consuming the queue on the other side.
 The problem arises when you have multiple groups of tasks all being processed from the same queue, and you want each task group to have their own throughput rate. 
 
-For example, given a queue: ->[A, B, C, C, C, C, A, A, B]->
- - consumer concurrency of 4 
- - process time of 1 second
- - rate limit of 1/sec for B tasks
- - rate limit of 2/sec for A tasks
- - rate limit of 2/sec for C tasks
+For example, given a queue: 
+
+    -> [A, B, C, C, C, C, A, A, B] -> (4 * Consumer)
+    
+     - consumer concurrency of 4 
+     - process time of 1 second
+     - rate limit of 2/sec for A tasks
+     - rate limit of 1/sec for B tasks
+     - rate limit of 2/sec for C tasks
 
 When the consumer starts to pull tasks off the queue, the first 4 will be pulled off and processed at once, 1 B, 2 A's and 1 C,
 all falling within their rate limits, this is fine. Once the function has finished processing those tasks, the next 4 will be pulled off.
@@ -52,6 +55,19 @@ going through 1000 SQS queues each with their own Lambda consumer. Lambda also a
 
 So as you can probably tell from above, my solution is to have a separate task pipeline made up of an SQS queue and Lambda handler function for each
 task group. 
+
+If we rejig our example from above, it would now look like this:
+
+    -> [A, A, A, A, A, A, A, A, A] -> (2 * Lambda)
+    -> [B, B, B, B, B, B, B, B, B] -> (1 * Lambda)
+    -> [C, C, C, C, C, C, C, C, C] -> (2 * Lambda)
+   
+    - process time of 1 second
+    - rate limit of 2/sec for A tasks
+    - rate limit of 1/sec for B tasks
+    - rate limit of 2/sec for C tasks
+   
+Now each task group can be processed at their maximum throughput limit at a constant rate without having to keep track of the count.
 
 The problem here is that you now have to manage potentially 1000s of task pipelines, and this could get out of hand really quickly. 
 
