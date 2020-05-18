@@ -39,6 +39,10 @@ functions:
     environment:
       DYNAMO_PIPELINE_CONFIGS_TABLE_NAME: ${self:custom.tableName}
       ENV_NAME: ${self:provider.stage}
+      CONSUMER_ROLE:
+        Fn::GetAtt:
+          - ConsumerRole
+          - Arn
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -76,3 +80,39 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: kinluek-serverless-processing-code
+
+    ConsumerRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: serverless-consumer-role-${self:provider.stage}
+        Description: The role used by the consumer functions
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "lambda.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: "AllowLogs"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                Effect: "Allow"
+                Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource: "*"
+          - PolicyName: "AllowPollSQS"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                Effect: "Allow"
+                Action:
+                  - "sqs:DeleteMessage"
+                  - "sqs:GetQueueAttributes"
+                  - "sqs:ReceiveMessage"
+                Resource: "arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*"
