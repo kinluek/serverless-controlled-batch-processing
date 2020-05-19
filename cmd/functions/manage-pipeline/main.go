@@ -27,8 +27,9 @@ func init() {
 	constants = getConstants()
 	sess = session.Must(session.NewSession())
 	sqsSvc = sqs.New(sess)
+	lambdaSvc = lambda.New(sess)
 	logger = logrus.New()
-	logger.SetFormatter(&logrus.JSONFormatter{PrettyPrint: true})
+	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
 }
 
@@ -39,8 +40,8 @@ func handle(ctx context.Context, event events.DynamoDBEvent) error {
 		return errors.Wrap(err, "failed to make instruction from event event")
 	}
 	h := pipelinemanager.New(sqsSvc, lambdaSvc, constants.EnvName)
+	h.Use(pipelinemanager.CatchPanic(logger))
 	h.Use(pipelinemanager.Log(logger))
-	h.Use(pipelinemanager.CatchPanic())
 	return h.Handle(ctx, instruction)
 }
 

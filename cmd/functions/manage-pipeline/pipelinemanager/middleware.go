@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"runtime/debug"
 )
 
 const (
@@ -55,7 +56,7 @@ func Log(log *logrus.Logger) Middleware {
 }
 
 // CatchPanic stops panics from bubbling up and returns them as an error.
-func CatchPanic() Middleware {
+func CatchPanic(log *logrus.Logger) Middleware {
 
 	// Middleware to return.
 	return func(before HandlerFunc) HandlerFunc {
@@ -68,6 +69,7 @@ func CatchPanic() Middleware {
 						err = errors.Wrapf(er, "panic occurred")
 					}
 					err = fmt.Errorf("panic occurred: %v", r)
+					log.WithFields(getLogFields(instruction, statusFail)).Errorf("%s: stacktrace: \n%s", err, debug.Stack())
 				}
 			}()
 			return before(ctx, instruction)
@@ -77,7 +79,9 @@ func CatchPanic() Middleware {
 
 func getLogFields(instruction Instruction, status string) logrus.Fields {
 	return logrus.Fields{
-		"process_config_id": instruction.Config.ID,
+		"config_id": instruction.Config.ID,
+		"operation":         instruction.Operation,
+		"instruction":       instruction,
 		"status":            status,
 	}
 }

@@ -62,6 +62,29 @@ functions:
           - sqs:SetQueueAttributes
           - sqs:GetQueueAttributes
         Resource: arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*
+      - Effect: Allow
+        Action:
+          - lambda:CreateFunction,
+          - lambda:UpdateFunctionEventInvokeConfig,
+          - lambda:TagResource,
+          - lambda:UpdateEventSourceMapping
+          - lambda:PublishLayerVersion,
+          - lambda:DeleteProvisionedConcurrencyConfig,
+          - lambda:UpdateFunctionConfiguration,
+          - lambda:CreateEventSourceMapping,
+          - lambda:UntagResource,
+          - lambda:PutFunctionConcurrency,
+          - lambda:UpdateAlias,
+          - lambda:UpdateFunctionCode,
+          - lambda:PutProvisionedConcurrencyConfig,
+          - lambda:PutFunctionEventInvokeConfig,
+          - lambda:DeleteFunctionEventInvokeConfig,
+          - lambda:DeleteFunction,
+          - lambda:PublishVersion,
+          - lambda:DeleteFunctionConcurrency,
+          - lambda:DeleteEventSourceMapping,
+          - lambda:CreateAlias
+        Resource: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:*:*
 
 resources:
   Resources:
