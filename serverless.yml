@@ -8,6 +8,8 @@ plugins:
 
 custom:
   tableName: pipeline-configs-${self:provider.stage}
+  bucketName: kinluek-serverless-processing-code-${self:provider.stage}
+  bucketKey: consume.zip
 
 
 provider:
@@ -37,8 +39,9 @@ functions:
               - PipelineConfigTable
               - StreamArn
     environment:
-      DYNAMO_PIPELINE_CONFIGS_TABLE_NAME: ${self:custom.tableName}
       ENV_NAME: ${self:provider.stage}
+      CONSUMER_BUCKET: ${self:custom.bucketName}
+      CONSUMER_KEY: ${self:custom.bucketKey}
       CONSUMER_ROLE:
         Fn::GetAtt:
           - ConsumerRole
@@ -79,7 +82,7 @@ resources:
     LambdaCodeBucket:
       Type: AWS::S3::Bucket
       Properties:
-        BucketName: kinluek-serverless-processing-code
+        BucketName: ${self:custom.bucketName}
 
     ConsumerRole:
       Type: AWS::IAM::Role

@@ -2,6 +2,7 @@ package pipelinemanager
 
 import (
 	"context"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -33,10 +34,10 @@ func wrapMiddleware(handler HandlerFunc, middleware ...Middleware) HandlerFunc {
 func Log(log *logrus.Logger) Middleware {
 
 	// Middleware to return.
-	m := func(before HandlerFunc) HandlerFunc {
+	return func(before HandlerFunc) HandlerFunc {
 
 		// Handler to return.
-		h := func(ctx context.Context, instruction Instruction) error {
+		return func(ctx context.Context, instruction Instruction) error {
 			const (
 				msgTemplateFail    = "fail - handling queue setup for process instruction %s"
 				msgTemplateSuccess = "success - handling queue setup for process instruction %s"
@@ -49,9 +50,29 @@ func Log(log *logrus.Logger) Middleware {
 			log.WithFields(getLogFields(instruction, statusSuccess)).Infof(msgTemplateSuccess, instruction.Config.ID)
 			return nil
 		}
-		return h
 	}
-	return m
+
+}
+
+// CatchPanic stops panics from bubbling up and returns them as an error.
+func CatchPanic() Middleware {
+
+	// Middleware to return.
+	return func(before HandlerFunc) HandlerFunc {
+
+		// Handler to return.
+		return func(ctx context.Context, instruction Instruction) (err error) {
+			defer func() {
+				if r := recover(); r != nil {
+					if er, ok := r.(error); ok {
+						err = errors.Wrapf(er, "panic occurred")
+					}
+					err = fmt.Errorf("panic occurred: %v", r)
+				}
+			}()
+			return before(ctx, instruction)
+		}
+	}
 }
 
 func getLogFields(instruction Instruction, status string) logrus.Fields {

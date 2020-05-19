@@ -22,23 +22,29 @@ const (
 // CreateWithDLQ will create a queue along with another queue which will act as the
 // dead letter queue, the dead letter queue will be named as the original queue name with
 // "-dlq" suffix. The visibility timeout must also be provided.
-func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) error {
+// The created queue ARN is returned.
+func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) (string, error) {
 	dlqOutput, err := createQueue(ctx, svc, name+extensionDQL, nil)
 	if err != nil {
-		return errors.Wrapf(err, "creating dlq for %v", name)
+		return "", errors.Wrapf(err, "creating dlq for %s", name)
 	}
 	dlqArn, err := getAttribute(ctx, svc, *dlqOutput.QueueUrl, attrNameQueueArn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get arn for dlq %v", *dlqOutput.QueueUrl)
+		return "", errors.Wrapf(err, "failed to get arn for dlq %s", *dlqOutput.QueueUrl)
 	}
 	attributes, err := makeAttributes(timeout, defaultRedriveCount, dlqArn)
 	if err != nil {
-		return err
+		return "", errors.Wrapf(err, "failed to make attributes for queue %s", name)
 	}
-	if _, err := createQueue(ctx, svc, name, attributes); err != nil {
-		return errors.Wrapf(err, "creating queue %v", name)
+	queueOutput, err := createQueue(ctx, svc, name, attributes)
+	if err != nil {
+		return "", errors.Wrapf(err, "creating queue %s", name)
 	}
-	return nil
+	queueArn, err := getAttribute(ctx, svc, *queueOutput.QueueUrl, attrNameQueueArn)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to get arn for queue %s", *queueOutput.QueueUrl)
+	}
+	return queueArn, nil
 }
 
 func createQueue(ctx context.Context, svc *sqs.SQS, name string, attributes map[string]*string) (*sqs.CreateQueueOutput, error) {

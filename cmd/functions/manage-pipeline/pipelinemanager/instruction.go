@@ -19,43 +19,52 @@ const (
 type Instruction struct {
 	Operation operation
 	Config    ConfigParams
+	Constants Constants
 }
 
 // ConfigParams represents pipeline configuration parameters, pointer fields are optional.
 type ConfigParams struct {
 	ID                       string `json:"id" required:"true"`
 	LambdaConcurrencyLimit   *int   `json:"concurrency_limit,omitempty"`
-	LambdaTimeoutSes         *int   `json:"lambda_timeout_secs,omitempty"`
+	LambdaTimeoutSecs        *int   `json:"lambda_timeout_secs,omitempty"`
 	SQSVisibilityTimeoutSecs *int   `json:"sqs_visibility_timeout_secs,omitempty"`
 }
 
-// MakeInstructionFromStreamRecord takes a DynamoDBEventRecord and makes an Instruction from it
+// Constants are the application constant parameters.
+type Constants struct {
+	ConsumerBucket string
+	ConsumerKey    string
+	ConsumerRole   string
+	EnvName        string
+}
+
+// MakeInstruction takes a DynamoDBEventRecord and a Constants object and makes an Instruction from it
 // which can be passed to a PipelineManager.
-func MakeInstructionFromStreamRecord(record events.DynamoDBEventRecord) (Instruction, error) {
+func MakeInstruction(record events.DynamoDBEventRecord, constants Constants) (Instruction, error) {
 	newImage := record.Change.NewImage
 	oldImage := record.Change.OldImage
 	op := getOperationFromImages(newImage, oldImage)
 	switch op {
 	case Add:
-		return makeInstructionAdd(newImage)
+		return makeInstructionAdd(newImage, constants)
 	case Update:
-		return makeInstructionUpdate(newImage, oldImage)
+		return makeInstructionUpdate(newImage, oldImage, constants)
 	case Delete:
-		return makeInstructionDelete(oldImage)
+		return makeInstructionDelete(oldImage, constants)
 	default:
 		return makeInstructionError()
 	}
 }
 
-func makeInstructionAdd(newImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
+func makeInstructionAdd(newImage map[string]events.DynamoDBAttributeValue, constants Constants) (Instruction, error) {
 	var config ConfigParams
 	if err := eventutil.UnmarshalDynamoAttrMap(newImage, &config); err != nil {
 		return Instruction{}, err
 	}
-	return Instruction{Operation: Add, Config: config}, nil
+	return Instruction{Operation: Add, Config: config, Constants: constants}, nil
 }
 
-func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
+func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttributeValue, constants Constants) (Instruction, error) {
 	var nc ConfigParams
 	if err := eventutil.UnmarshalDynamoAttrMap(newImage, &nc); err != nil {
 		return Instruction{}, err
@@ -67,18 +76,18 @@ func makeInstructionUpdate(newImage, oldImage map[string]events.DynamoDBAttribut
 	var uc ConfigParams
 	uc.ID = nc.ID
 	uc.LambdaConcurrencyLimit = getUpdatedInt(nc.LambdaConcurrencyLimit, oc.LambdaConcurrencyLimit)
-	uc.LambdaTimeoutSes = getUpdatedInt(nc.LambdaTimeoutSes, oc.LambdaTimeoutSes)
+	uc.LambdaTimeoutSecs = getUpdatedInt(nc.LambdaTimeoutSecs, oc.LambdaTimeoutSecs)
 	uc.SQSVisibilityTimeoutSecs = getUpdatedInt(nc.SQSVisibilityTimeoutSecs, oc.SQSVisibilityTimeoutSecs)
-	return Instruction{Operation: Update, Config: uc}, nil
+	return Instruction{Operation: Update, Config: uc, Constants: constants}, nil
 }
 
-func makeInstructionDelete(oldImage map[string]events.DynamoDBAttributeValue) (Instruction, error) {
+func makeInstructionDelete(oldImage map[string]events.DynamoDBAttributeValue, constants Constants) (Instruction, error) {
 	var oc ConfigParams
 	if err := eventutil.UnmarshalDynamoAttrMap(oldImage, &oc); err != nil {
 		return Instruction{}, err
 	}
 	dc := ConfigParams{ID: oc.ID}
-	return Instruction{Operation: Delete, Config: dc}, nil
+	return Instruction{Operation: Delete, Config: dc, Constants: constants}, nil
 }
 
 func makeInstructionError() (Instruction, error) {

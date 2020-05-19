@@ -6,7 +6,7 @@ func validateAddConfig(config ConfigParams) error {
 	if config.SQSVisibilityTimeoutSecs == nil {
 		return errors.New("invalid add config: missing sqs visibility timeout")
 	}
-	if config.LambdaTimeoutSes == nil {
+	if config.LambdaTimeoutSecs == nil {
 		return errors.New("invalid add config: missing lambda timeout")
 	}
 	if config.LambdaConcurrencyLimit == nil {

@@ -14,14 +14,8 @@ import (
 	"os"
 )
 
-// envars holds the configuration parameters for the application.
-type envars struct {
-	tableName string // env:DYNAMO_PIPELINE_CONFIGS_TABLE_NAME
-	envName   string // env:ENV_NAME
-}
-
 var (
-	envs      envars
+	constants pipelinemanager.Constants
 	sess      *session.Session
 	sqsSvc    *sqs.SQS
 	lambdaSvc *lambda.Lambda
@@ -30,7 +24,7 @@ var (
 
 // use init function to save on reinitialisation costs on lambda warm starts.
 func init() {
-	envs = loadEnvars()
+	constants = getConstants()
 	sess = session.Must(session.NewSession())
 	sqsSvc = sqs.New(sess)
 	logger = logrus.New()
@@ -40,12 +34,13 @@ func init() {
 
 // The Lambda function to be triggered when changes happen on the pipeline configuration DynamoDB table.
 func handle(ctx context.Context, event events.DynamoDBEvent) error {
-	instruction, err := pipelinemanager.MakeInstructionFromStreamRecord(event.Records[0])
+	instruction, err := pipelinemanager.MakeInstruction(event.Records[0], constants)
 	if err != nil {
 		return errors.Wrap(err, "failed to make instruction from event event")
 	}
-	h := pipelinemanager.New(sqsSvc, lambdaSvc, envs.tableName, envs.envName)
+	h := pipelinemanager.New(sqsSvc, lambdaSvc, constants.EnvName)
 	h.Use(pipelinemanager.Log(logger))
+	h.Use(pipelinemanager.CatchPanic())
 	return h.Handle(ctx, instruction)
 }
 
@@ -53,20 +48,34 @@ func main() {
 	lambdaHandler.Start(handle)
 }
 
-// loadEnvars loads the environment variables needed for the configuration
-// of the program, any problems with loading the envars will cause the program to panic.
-func loadEnvars() envars {
+// getConstants loads constants from the environment.
+func getConstants() pipelinemanager.Constants {
 	const (
-		EnvarTableName = "DYNAMO_PIPELINE_CONFIGS_TABLE_NAME"
-		EnvarEnvName   = "ENV_NAME"
+		EnvarEnvName        = "ENV_NAME"
+		EnvarConsumerRole   = "CONSUMER_ROLE"
+		EnvarConsumerBucket = "CONSUMER_BUCKET"
+		EnvarConsumerKey    = "CONSUMER_KEY"
 	)
-	tableName, err := env.GetEnvRequired(EnvarTableName)
-	if err != nil {
-		panic(err)
-	}
 	envName, err := env.GetEnvRequired(EnvarEnvName)
 	if err != nil {
 		panic(err)
 	}
-	return envars{tableName, envName}
+	consumerRole, err := env.GetEnvRequired(EnvarConsumerRole)
+	if err != nil {
+		panic(err)
+	}
+	consumerBucket, err := env.GetEnvRequired(EnvarConsumerBucket)
+	if err != nil {
+		panic(err)
+	}
+	consumerKey, err := env.GetEnvRequired(EnvarConsumerKey)
+	if err != nil {
+		panic(err)
+	}
+	return pipelinemanager.Constants{
+		ConsumerRole:   consumerRole,
+		ConsumerBucket: consumerBucket,
+		ConsumerKey:    consumerKey,
+		EnvName:        envName,
+	}
 }

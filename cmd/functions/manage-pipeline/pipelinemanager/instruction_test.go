@@ -23,7 +23,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 				Config: pipelinemanager.ConfigParams{
 					ID:                       "new-config-id",
 					LambdaConcurrencyLimit:   pInt(5),
-					LambdaTimeoutSes:         pInt(10),
+					LambdaTimeoutSecs:        pInt(10),
 					SQSVisibilityTimeoutSecs: pInt(15),
 				},
 			},
@@ -36,7 +36,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 				Config: pipelinemanager.ConfigParams{
 					ID:                     "update-config-id",
 					LambdaConcurrencyLimit: pInt(12),
-					LambdaTimeoutSes:       pInt(5),
+					LambdaTimeoutSecs:      pInt(5),
 				},
 			},
 		},
@@ -56,8 +56,8 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 			want: pipelinemanager.Instruction{
 				Operation: pipelinemanager.Update,
 				Config: pipelinemanager.ConfigParams{
-					ID:               "update-config-id",
-					LambdaTimeoutSes: pInt(5),
+					ID:                "update-config-id",
+					LambdaTimeoutSecs: pInt(5),
 				},
 			},
 		},
@@ -65,7 +65,7 @@ func TestMakeInstructionFromStreamRecord(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			record := getRecordFromFile(t, tt.file)
-			instruction, err := pipelinemanager.MakeInstructionFromStreamRecord(record)
+			instruction, err := pipelinemanager.MakeInstruction(record, pipelinemanager.Constants{})
 			if err != nil {
 				t.Fatalf("could not parse instruction from record: %v", err)
 			}
