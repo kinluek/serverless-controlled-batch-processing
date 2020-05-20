@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/pkg/errors"
+	"time"
 )
 
 const (
@@ -13,6 +14,7 @@ const (
 	defaultRuntime   = "go1.x"
 	defaultHandler   = "consume"
 	defaultEnabled   = true
+	defaultWaitSecs  = 20
 )
 
 // AddParams are the required parameters needed to Add a consumer
@@ -30,6 +32,9 @@ type AddParams struct {
 func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) error {
 	if err := createFunction(ctx, svc, p.Bucket, p.Key, p.Name, p.RoleArn, p.Timeout); err != nil {
 		return errors.Wrapf(err, "failed to create function %s", p.Name)
+	}
+	if err := waitTillActive(ctx, svc, p.Name, defaultWaitSecs); err != nil {
+		return errors.Wrapf(err, "failed to wait for function %s to be active", p.Name)
 	}
 	if err := setConcurrency(ctx, svc, p.Name, p.Concurrency); err != nil {
 		return errors.Wrapf(err, "failed to set function %s concurrency", p.Name)
@@ -53,6 +58,24 @@ func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, 
 		Timeout:      aws.Int64(timeout),
 	})
 	return err
+}
+
+func waitTillActive(ctx context.Context, svc *lambda.Lambda, name string, waitSecs int) error {
+	var state string
+	for i := 0; i < waitSecs; i++ {
+		c, err := svc.GetFunctionConfigurationWithContext(ctx, &lambda.GetFunctionConfigurationInput{
+			FunctionName: aws.String(name),
+		})
+		if err != nil {
+			return err
+		}
+		if *c.State == lambda.StateActive {
+			return nil
+		}
+		state = *c.State
+		time.Sleep(time.Second)
+	}
+	return errors.Errorf("function is %s after %v", state, waitSecs)
 }
 
 func setConcurrency(ctx context.Context, svc *lambda.Lambda, funcName string, concurrency int64) error {

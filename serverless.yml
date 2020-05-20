@@ -10,6 +10,7 @@ custom:
   tableName: pipeline-configs-${self:provider.stage}
   bucketName: kinluek-serverless-processing-code-${self:provider.stage}
   bucketKey: consume.zip
+  consumerRoleName: serverless-consumer-role-${self:provider.stage}
 
 
 provider:
@@ -42,10 +43,7 @@ functions:
       ENV_NAME: ${self:provider.stage}
       CONSUMER_BUCKET: ${self:custom.bucketName}
       CONSUMER_KEY: ${self:custom.bucketKey}
-      CONSUMER_ROLE:
-        Fn::GetAtt:
-          - ConsumerRole
-          - Arn
+      CONSUMER_ROLE: arn:aws:iam::#{AWS::AccountId}:role/${self:custom.consumerRoleName}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -64,26 +62,27 @@ functions:
       - Effect: Allow
         Action:
           - lambda:CreateFunction
-          - lambda:CreateEventSourceMapping
-          - lambda:UpdateFunctionEventInvokeConfig
-          - lambda:UpdateEventSourceMapping
           - lambda:UpdateFunctionConfiguration
           - lambda:UpdateFunctionCode
           - lambda:PutFunctionConcurrency
-          - lambda:PutProvisionedConcurrencyConfig
-          - lambda:PutFunctionEventInvokeConfig
           - lambda:DeleteFunction
+          - lambda:GetFunctionConfiguration
         Resource: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:*
       - Effect: Allow
         Action:
+          - lambda:CreateEventSourceMapping
+        Resource: "*"
+      - Effect: Allow
+        Action:
+          - lambda:UpdateEventSourceMapping
+        Resource: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:eventSourceMapping:*
+      - Effect: Allow
+        Action:
           - iam:PassRole
-        Resource:
-          Fn::GetAtt:
-            - ConsumerRole
-            - Arn
+        Resource: arn:aws:iam::#{AWS::AccountId}:role/${self:custom.consumerRoleName}
       - Effect: Allow
         Action: s3:GetObject
-        Resource: arn:aws:s3:::${self:custom.bucketName}/${self:custom.bucketKey}
+        Resource: arn:aws:s3:::${self:custom.bucketName}/*
 
 
 resources:
@@ -110,7 +109,7 @@ resources:
     ConsumerRole:
       Type: AWS::IAM::Role
       Properties:
-        RoleName: serverless-consumer-role-${self:provider.stage}
+        RoleName: ${self:custom.consumerRoleName}
         Description: The role used by the consumer functions
         AssumeRolePolicyDocument:
           Version: "2012-10-17"
