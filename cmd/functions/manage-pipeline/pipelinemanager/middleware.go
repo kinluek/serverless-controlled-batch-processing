@@ -79,9 +79,7 @@ func CatchPanic(log *logrus.Logger) Middleware {
 
 func getLogFields(instruction Instruction, status string) logrus.Fields {
 	return logrus.Fields{
-		"config_id": instruction.Config.ID,
-		"operation":         instruction.Operation,
-		"instruction":       instruction,
-		"status":            status,
+		"instruction": instruction,
+		"status":      status,
 	}
 }

@@ -49,11 +49,10 @@ functions:
     iamRoleStatements:
       - Effect: Allow
         Action:
-          - dynamodb:scan
           - dynamodb:ListStreams
           - dynamodb:DescribeTable
-          - dynamodb:UpdateItem
-          - dynamodb:GetItem
+          - dynamodb:GetRecords
+          - dynamodb:GetShardIterator
         Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.tableName}
       - Effect: Allow
         Action:
@@ -64,27 +63,28 @@ functions:
         Resource: arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*
       - Effect: Allow
         Action:
-          - lambda:CreateFunction,
-          - lambda:UpdateFunctionEventInvokeConfig,
-          - lambda:TagResource,
+          - lambda:CreateFunction
+          - lambda:CreateEventSourceMapping
+          - lambda:UpdateFunctionEventInvokeConfig
           - lambda:UpdateEventSourceMapping
-          - lambda:PublishLayerVersion,
-          - lambda:DeleteProvisionedConcurrencyConfig,
-          - lambda:UpdateFunctionConfiguration,
-          - lambda:CreateEventSourceMapping,
-          - lambda:UntagResource,
-          - lambda:PutFunctionConcurrency,
-          - lambda:UpdateAlias,
-          - lambda:UpdateFunctionCode,
-          - lambda:PutProvisionedConcurrencyConfig,
-          - lambda:PutFunctionEventInvokeConfig,
-          - lambda:DeleteFunctionEventInvokeConfig,
-          - lambda:DeleteFunction,
-          - lambda:PublishVersion,
-          - lambda:DeleteFunctionConcurrency,
-          - lambda:DeleteEventSourceMapping,
-          - lambda:CreateAlias
-        Resource: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:*:*
+          - lambda:UpdateFunctionConfiguration
+          - lambda:UpdateFunctionCode
+          - lambda:PutFunctionConcurrency
+          - lambda:PutProvisionedConcurrencyConfig
+          - lambda:PutFunctionEventInvokeConfig
+          - lambda:DeleteFunction
+        Resource: arn:aws:lambda:${self:provider.region}:#{AWS::AccountId}:function:*
+      - Effect: Allow
+        Action:
+          - iam:PassRole
+        Resource:
+          Fn::GetAtt:
+            - ConsumerRole
+            - Arn
+      - Effect: Allow
+        Action: s3:GetObject
+        Resource: arn:aws:s3:::${self:custom.bucketName}/${self:custom.bucketKey}
+
 
 resources:
   Resources:
@@ -131,7 +131,7 @@ resources:
                   - "logs:CreateLogGroup"
                   - "logs:CreateLogStream"
                   - "logs:PutLogEvents"
-                Resource: "*"
+                Resource: "arn:aws:logs:${self:provider.region}:#{AWS::AccountId}:log-group:/aws/lambda"
           - PolicyName: "AllowPollSQS"
             PolicyDocument:
               Version: "2012-10-17"
@@ -142,3 +142,4 @@ resources:
                   - "sqs:GetQueueAttributes"
                   - "sqs:ReceiveMessage"
                 Resource: "arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*"
+
