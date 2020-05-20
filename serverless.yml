@@ -7,7 +7,8 @@ plugins:
   - serverless-pseudo-parameters
 
 custom:
-  tableName: pipeline-configs-${self:provider.stage}
+  configTableName: pipeline-configs-${self:provider.stage}
+  identifiersTableName: pipeline-identifiers-${self:provider.stage}
   bucketName: kinluek-serverless-processing-code-${self:provider.stage}
   bucketKey: consume.zip
   consumerRoleName: serverless-consumer-role-${self:provider.stage}
@@ -44,6 +45,7 @@ functions:
       CONSUMER_BUCKET: ${self:custom.bucketName}
       CONSUMER_KEY: ${self:custom.bucketKey}
       CONSUMER_ROLE: arn:aws:iam::#{AWS::AccountId}:role/${self:custom.consumerRoleName}
+      IDENTIFIERS_TABLE: ${self:custom.identifiersTableName}
     iamRoleStatements:
       - Effect: Allow
         Action:
@@ -51,7 +53,11 @@ functions:
           - dynamodb:DescribeTable
           - dynamodb:GetRecords
           - dynamodb:GetShardIterator
-        Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.tableName}
+        Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.configTableName}
+      - Effect: Allow
+        Action:
+          - dynamodb:PutItem
+        Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.identifiersTableName}
       - Effect: Allow
         Action:
           - sqs:TagQueue
@@ -87,10 +93,11 @@ functions:
 
 resources:
   Resources:
+
     PipelineConfigTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${self:custom.tableName}
+        TableName: ${self:custom.configTableName}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -100,6 +107,18 @@ resources:
         BillingMode: PAY_PER_REQUEST
         StreamSpecification:
           StreamViewType: NEW_AND_OLD_IMAGES
+
+    PipelineIdentiersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.identifiersTableName}
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
 
     LambdaCodeBucket:
       Type: AWS::S3::Bucket

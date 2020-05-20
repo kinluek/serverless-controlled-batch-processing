@@ -1,3 +1,4 @@
+// Package queue provides an API to add, update and delete queues.
 package queue
 
 import (
@@ -19,32 +20,47 @@ const (
 	defaultRedriveCount = 2
 )
 
+// Identifier holds the identifiers for a queue, the queue URL and queue ARN.
+type Identifier struct {
+	URL string
+	ARN string
+}
+
+// IdentifierPair is returned by the holds the Identifiers for queue and its associated DLQ.
+type IdentifierPair struct {
+	Main Identifier
+	DLQ  Identifier
+}
+
 // CreateWithDLQ will create a queue along with another queue which will act as the
 // dead letter queue, the dead letter queue will be named as the original queue name with
 // "-dlq" suffix. The visibility timeout must also be provided.
-// The created queue ARN is returned.
-func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) (string, error) {
+func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) (IdentifierPair, error) {
 	dlqOutput, err := createQueue(ctx, svc, name+extensionDQL, nil)
 	if err != nil {
-		return "", errors.Wrapf(err, "creating dlq for %s", name)
+		return IdentifierPair{}, errors.Wrapf(err, "creating dlq for %s", name)
 	}
 	dlqArn, err := getAttribute(ctx, svc, *dlqOutput.QueueUrl, attrNameQueueArn)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to get arn for dlq %s", *dlqOutput.QueueUrl)
+		return IdentifierPair{}, errors.Wrapf(err, "failed to get arn for dlq %s", *dlqOutput.QueueUrl)
 	}
 	attributes, err := makeAttributes(timeout, defaultRedriveCount, dlqArn)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to make attributes for queue %s", name)
+		return IdentifierPair{}, errors.Wrapf(err, "failed to make attributes for queue %s", name)
 	}
-	queueOutput, err := createQueue(ctx, svc, name, attributes)
+	mainOutput, err := createQueue(ctx, svc, name, attributes)
 	if err != nil {
-		return "", errors.Wrapf(err, "creating queue %s", name)
+		return IdentifierPair{}, errors.Wrapf(err, "creating queue %s", name)
 	}
-	queueArn, err := getAttribute(ctx, svc, *queueOutput.QueueUrl, attrNameQueueArn)
+	mainArn, err := getAttribute(ctx, svc, *mainOutput.QueueUrl, attrNameQueueArn)
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to get arn for queue %s", *queueOutput.QueueUrl)
+		return IdentifierPair{}, errors.Wrapf(err, "failed to get arn for queue %s", *mainOutput.QueueUrl)
 	}
-	return queueArn, nil
+	output := IdentifierPair{
+		Main: Identifier{*dlqOutput.QueueUrl, dlqArn},
+		DLQ:  Identifier{*mainOutput.QueueUrl, mainArn},
+	}
+	return output, nil
 }
 
 func createQueue(ctx context.Context, svc *sqs.SQS, name string, attributes map[string]*string) (*sqs.CreateQueueOutput, error) {

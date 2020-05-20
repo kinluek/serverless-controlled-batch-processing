@@ -89,6 +89,8 @@ Here's what we'll need:
    The configuration item will hold the SQS and Lambda configuration options (concurrency, visibility timeouts, environment variables etc)
  - The stream listener should also be able to update the Lambda and SQS configuration when the configuration object is updated.
  - The stream listener should also be able to remove all the resources for a process coniguration when that object is deleted.
+ - A DynamoDB table to hold the resource identifiers for each pipeline, there should be a 1 to 1 relationship between
+   the items in this table and the items in the configuration table.
  
 Once we have all this set up, we should just be able to add new configuration object to DynamoDB and have the triggers do the rest of the work
 to set up a whole new task pipe line for us, each with their own concurrency limits. We should be able to update the configuration pipelines by just updating 

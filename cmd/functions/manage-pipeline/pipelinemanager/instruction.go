@@ -32,10 +32,11 @@ type ConfigParams struct {
 
 // Constants are the application constant parameters.
 type Constants struct {
-	ConsumerBucket string
-	ConsumerKey    string
-	ConsumerRole   string
-	EnvName        string
+	ConsumerBucket   string
+	ConsumerKey      string
+	ConsumerRole     string
+	IdentifiersTable string
+	EnvName          string
 }
 
 // MakeInstruction takes a DynamoDBEventRecord and a Constants object and makes an Instruction from it

@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-lambda-go/events"
 	lambdaHandler "github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/kinluek/serverless-controlled-batch-processing/cmd/functions/manage-pipeline/pipelinemanager"
@@ -14,11 +15,30 @@ import (
 	"os"
 )
 
+// getConstants loads constants from the environment.
+func getConstants() pipelinemanager.Constants {
+	const (
+		EnvarEnvName          = "ENV_NAME"
+		EnvarConsumerRole     = "CONSUMER_ROLE"
+		EnvarConsumerBucket   = "CONSUMER_BUCKET"
+		EnvarConsumerKey      = "CONSUMER_KEY"
+		EnvarIdentifiersTable = "IDENTIFIERS_TABLE"
+	)
+	return pipelinemanager.Constants{
+		EnvName:          getEnv(EnvarEnvName),
+		ConsumerRole:     getEnv(EnvarConsumerRole),
+		ConsumerBucket:   getEnv(EnvarConsumerBucket),
+		ConsumerKey:      getEnv(EnvarConsumerKey),
+		IdentifiersTable: getEnv(EnvarIdentifiersTable),
+	}
+}
+
 var (
 	constants pipelinemanager.Constants
 	sess      *session.Session
 	sqsSvc    *sqs.SQS
 	lambdaSvc *lambda.Lambda
+	db        *dynamodb.DynamoDB
 	logger    *logrus.Logger
 )
 
@@ -28,6 +48,7 @@ func init() {
 	sess = session.Must(session.NewSession())
 	sqsSvc = sqs.New(sess)
 	lambdaSvc = lambda.New(sess)
+	db = dynamodb.New(sess)
 	logger = logrus.New()
 	logger.SetFormatter(&logrus.JSONFormatter{})
 	logger.SetOutput(os.Stdout)
@@ -39,7 +60,7 @@ func handle(ctx context.Context, event events.DynamoDBEvent) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to make instruction from event event")
 	}
-	h := pipelinemanager.New(sqsSvc, lambdaSvc, constants.EnvName)
+	h := pipelinemanager.New(sqsSvc, lambdaSvc, db, constants.EnvName)
 	h.Use(pipelinemanager.CatchPanic(logger))
 	h.Use(pipelinemanager.Log(logger))
 	return h.Handle(ctx, instruction)
@@ -49,34 +70,10 @@ func main() {
 	lambdaHandler.Start(handle)
 }
 
-// getConstants loads constants from the environment.
-func getConstants() pipelinemanager.Constants {
-	const (
-		EnvarEnvName        = "ENV_NAME"
-		EnvarConsumerRole   = "CONSUMER_ROLE"
-		EnvarConsumerBucket = "CONSUMER_BUCKET"
-		EnvarConsumerKey    = "CONSUMER_KEY"
-	)
-	envName, err := env.GetEnvRequired(EnvarEnvName)
+func getEnv(name string) string {
+	val, err := env.GetEnvRequired(name)
 	if err != nil {
 		panic(err)
 	}
-	consumerRole, err := env.GetEnvRequired(EnvarConsumerRole)
-	if err != nil {
-		panic(err)
-	}
-	consumerBucket, err := env.GetEnvRequired(EnvarConsumerBucket)
-	if err != nil {
-		panic(err)
-	}
-	consumerKey, err := env.GetEnvRequired(EnvarConsumerKey)
-	if err != nil {
-		panic(err)
-	}
-	return pipelinemanager.Constants{
-		ConsumerRole:   consumerRole,
-		ConsumerBucket: consumerBucket,
-		ConsumerKey:    consumerKey,
-		EnvName:        envName,
-	}
+	return val
 }

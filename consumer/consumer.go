@@ -1,3 +1,4 @@
+// Package consumer provides an API to add, update and delete consumers.
 package consumer
 
 import (
@@ -17,6 +18,12 @@ const (
 	defaultWaitSecs  = 20
 )
 
+// Identifier holds the consumer identifiers, the lambda function name and ARN.
+type Identifier struct {
+	Name string
+	Arn  string
+}
+
 // AddParams are the required parameters needed to Add a consumer
 type AddParams struct {
 	Bucket      string // S3 bucket name
@@ -29,24 +36,25 @@ type AddParams struct {
 }
 
 // Add adds a new consumer to an existing queue.
-func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) error {
-	if err := createFunction(ctx, svc, p.Bucket, p.Key, p.Name, p.RoleArn, p.Timeout); err != nil {
-		return errors.Wrapf(err, "failed to create function %s", p.Name)
+func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) (Identifier, error) {
+	ident, err := createFunction(ctx, svc, p.Bucket, p.Key, p.Name, p.RoleArn, p.Timeout)
+	if err != nil {
+		return Identifier{}, errors.Wrapf(err, "failed to create function %s", p.Name)
 	}
 	if err := waitTillActive(ctx, svc, p.Name, defaultWaitSecs); err != nil {
-		return errors.Wrapf(err, "failed to wait for function %s to be active", p.Name)
+		return Identifier{}, errors.Wrapf(err, "failed to wait for function %s to be active", p.Name)
 	}
 	if err := setConcurrency(ctx, svc, p.Name, p.Concurrency); err != nil {
-		return errors.Wrapf(err, "failed to set function %s concurrency", p.Name)
+		return Identifier{}, errors.Wrapf(err, "failed to set function %s concurrency", p.Name)
 	}
 	if err := attachQueue(ctx, svc, p.Name, p.QueueARN); err != nil {
-		return errors.Wrapf(err, "failed to attach consumer function %s to queue %s", p.Name, p.QueueARN)
+		return Identifier{}, errors.Wrapf(err, "failed to attach consumer function %s to queue %s", p.Name, p.QueueARN)
 	}
-	return nil
+	return ident, nil
 }
 
-func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, roleArn string, timeout int64) error {
-	_, err := svc.CreateFunctionWithContext(ctx, &lambda.CreateFunctionInput{
+func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, roleArn string, timeout int64) (Identifier, error) {
+	output, err := svc.CreateFunctionWithContext(ctx, &lambda.CreateFunctionInput{
 		Code: &lambda.FunctionCode{
 			S3Bucket: aws.String(bucket),
 			S3Key:    aws.String(key),
@@ -57,7 +65,10 @@ func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, 
 		Runtime:      aws.String(defaultRuntime),
 		Timeout:      aws.Int64(timeout),
 	})
-	return err
+	if err != nil {
+		return Identifier{}, err
+	}
+	return Identifier{*output.FunctionName, *output.FunctionArn}, nil
 }
 
 func waitTillActive(ctx context.Context, svc *lambda.Lambda, name string, waitSecs int) error {
