@@ -119,15 +119,33 @@ Finally, since this is all serverless, even with all these pipelines set up, you
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
 
 
-## Setup
+## Setup and Experimentation (assumed basic knowledge of AWS)
 
-1) Make sure you have an AWS account and credentials set up on your machine - (assumed basic knowledge of AWS).
+1) Make sure you have an AWS account and credentials set up on your machine.
 2) `npm install -g serverless` - To deploy this application make sure you have the serverless framework installed, for this you will also need Node and NPM installed.
 3) `npm install`
 4) `make STAGE=<stage_name> NAME_SPACE=<name_space> deploy` eg: `make STAGE=dev NAME_SPACE=kinluek deploy` the namespace is used to name 
     S3 buckets, bucket names must be globally unique.
 5) `make upload_consumer` - this will upload the consumer code to the S3 bucket.
 6) `make STAGE=<stage_name> NAME_SPACE=<name_space> remove` - this will remove the stack, however it will not remove the created pipelines, to delete all the pipelines just delete all the items in the configs table first.
+
+Once the application is deployed, you can go to the AWS DynamoDB console to view your new tables. There should be two tables,
+one for configuration, and one for the resource identifiers for the created pipelines. Do NOT write to the identifiers table.
+
+if you add a configuration item to the config table, for example:
+```json
+{
+      "id": "pipeline-id-123",
+      "concurrency_limit": 12,
+      "lambda_timeout_secs": 10,
+      "sqs_visibility_timeout_secs": 15
+}
+```
+
+You should then almost instantly be able to view the new queues and functions set up for it in the SQS and Lambda consoles.
+A new item will also be added to the identifiers table with the ARNs and names of the new resources for that pipeline.
+
+If you delete the configuration item you just added, it will then subsequently remove all the created resources for it.
 
 ### Main TODOS
 
