@@ -40,6 +40,7 @@ func (r *pipelineRemover) remove(ctx context.Context, config ConfigParams, const
 	if err := r.removeIdentifier(ctx, constants, ident); err != nil {
 		return errors.Wrapf(err, "failed to remove identifier for pipeline %s", config.ID)
 	}
+	return nil
 }
 
 func (r *pipelineRemover) getIdentifiers(ctx context.Context, config ConfigParams, constants Constants) (pipeline.Identifier, error) {
