@@ -5,6 +5,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"github.com/pkg/errors"
 )
 
 // HandlerFunc is a function that can handle a PipelineConfig.
@@ -43,9 +44,26 @@ func (h *PipelineManager) Handle(ctx context.Context, instruction Instruction) e
 func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) error {
 	switch instruction.Operation {
 	case Add:
-		adder := newAdder(h.lambdaSvc, h.sqsSvc, h.db, h.envName)
-		return adder.add(ctx, instruction.Config, instruction.Constants)
+		return h.add(ctx, instruction)
+	case Delete:
+		return h.delete(ctx, instruction)
 	default:
 		return nil
 	}
+}
+
+func (h *PipelineManager) add(ctx context.Context, instruction Instruction) error {
+	adder := newAdder(h.lambdaSvc, h.sqsSvc, h.db, h.envName)
+	if err := adder.add(ctx, instruction.Config, instruction.Constants); err != nil {
+		return errors.Wrapf(err, "failed to add pipeline")
+	}
+	return nil
+}
+
+func (h *PipelineManager) delete(ctx context.Context, instruction Instruction) error {
+	remover := newRemover(h.lambdaSvc, h.sqsSvc, h.db)
+	if err := remover.remove(ctx,  instruction.Config, instruction.Constants); err != nil {
+		return errors.Wrapf(err, "failed to remove pipeline")
+	}
+	return nil
 }
