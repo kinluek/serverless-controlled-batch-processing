@@ -53,6 +53,14 @@ func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) (Identifier, erro
 	return ident, nil
 }
 
+// Delete takes a function name and deletes it.
+func Delete(ctx context.Context, svc *lambda.Lambda, name string) error {
+	if _, err := svc.DeleteFunctionWithContext(ctx, &lambda.DeleteFunctionInput{FunctionName: aws.String(name)}); err != nil {
+		return errors.Wrapf(err, "failed to delete function %s", name)
+	}
+	return nil
+}
+
 func createFunction(ctx context.Context, svc *lambda.Lambda, bucket, key, name, roleArn string, timeout int64) (Identifier, error) {
 	output, err := svc.CreateFunctionWithContext(ctx, &lambda.CreateFunctionInput{
 		Code: &lambda.FunctionCode{
