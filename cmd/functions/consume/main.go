@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// handle is the task process which consumers the queue.
+// handle is the task processor which consumes the queue.
 // For now all it will do is sleep for a second and then print the SQS message.
 func handle(event events.SQSEvent) error {
 	time.Sleep(time.Second)

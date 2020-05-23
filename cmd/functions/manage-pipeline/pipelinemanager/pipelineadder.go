@@ -77,8 +77,8 @@ func makePipelineIdentifier(id string, qi queue.IdentifierPair, ci consumer.Iden
 		ID:                 id,
 		QueueURL:           qi.Main.URL,
 		QueueARN:           qi.Main.ARN,
-		DeadLetterQueueURL: qi.Main.URL,
-		DeadLetterQueueARN: qi.Main.ARN,
+		DeadLetterQueueURL: qi.DLQ.URL,
+		DeadLetterQueueARN: qi.DLQ.ARN,
 		ConsumerName:       ci.Name,
 		ConsumerARN:        ci.Arn,
 	}

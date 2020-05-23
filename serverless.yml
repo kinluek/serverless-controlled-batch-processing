@@ -57,11 +57,14 @@ functions:
       - Effect: Allow
         Action:
           - dynamodb:PutItem
+          - dynamodb:GetItem
+          - dynamodb:DeleteItem
         Resource: arn:aws:dynamodb:${self:provider.region}:#{AWS::AccountId}:table/${self:custom.identifiersTableName}
       - Effect: Allow
         Action:
           - sqs:TagQueue
           - sqs:CreateQueue
+          - sqs:DeleteQueue
           - sqs:SetQueueAttributes
           - sqs:GetQueueAttributes
         Resource: arn:aws:sqs:${self:provider.region}:#{AWS::AccountId}:*
