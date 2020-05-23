@@ -62,3 +62,38 @@ func PutIdentifier(ctx context.Context, db *dynamodb.DynamoDB, tableName string,
 	}
 	return nil
 }
+
+// GetIdentifier gets an Identifier from the DynamoDB table.
+func GetIdentifier(ctx context.Context, db *dynamodb.DynamoDB, tableName, id string) (Identifier, error) {
+	var ident Identifier
+	out, err := db.GetItemWithContext(ctx, &dynamodb.GetItemInput{
+		Key:       makeKey(id),
+		TableName: aws.String(tableName),
+	})
+	if err != nil {
+		return ident, errors.Wrapf(err, "failed to get pipeline identifier %s from %s", id, tableName)
+	}
+	if err := dynamodbattribute.UnmarshalMap(out.Item, &ident); err != nil {
+		return ident, errors.Wrapf(err, "failed to get unmarshal identifier %s from %s", id, tableName)
+	}
+	return ident, nil
+}
+
+// DeleteItem takes an ID and a table name and deletes the item from the table.
+// Should be used to delete either a Config item or an Identifier item.
+func DeleteItem(ctx context.Context, db *dynamodb.DynamoDB, tableName, id string) error {
+	_, err := db.DeleteItemWithContext(ctx, &dynamodb.DeleteItemInput{
+		Key:       makeKey(id),
+		TableName: aws.String(tableName),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to delete item %s from %s", id, tableName)
+	}
+	return nil
+}
+
+func makeKey(id string) map[string]*dynamodb.AttributeValue {
+	return map[string]*dynamodb.AttributeValue{
+		"id": {S: aws.String(id)},
+	}
+}

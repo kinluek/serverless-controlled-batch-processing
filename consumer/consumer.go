@@ -15,7 +15,8 @@ const (
 	defaultRuntime   = "go1.x"
 	defaultHandler   = "consume"
 	defaultEnabled   = true
-	defaultWaitSecs  = 20
+
+	waitSecs = 20
 )
 
 // Identifier holds the consumer identifiers, the lambda function name and ARN.
@@ -41,7 +42,7 @@ func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) (Identifier, erro
 	if err != nil {
 		return Identifier{}, errors.Wrapf(err, "failed to create function %s", p.Name)
 	}
-	if err := waitTillActive(ctx, svc, p.Name, defaultWaitSecs); err != nil {
+	if err := waitTillActive(ctx, svc, p.Name, waitSecs); err != nil {
 		return Identifier{}, errors.Wrapf(err, "failed to wait for function %s to be active", p.Name)
 	}
 	if err := setConcurrency(ctx, svc, p.Name, p.Concurrency); err != nil {
