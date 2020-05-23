@@ -63,6 +63,14 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) 
 	return output, nil
 }
 
+// Delete takes a queue URL and removes it.
+func Delete(ctx context.Context, svc *sqs.SQS, url string) error {
+	if _, err := svc.DeleteQueueWithContext(ctx, &sqs.DeleteQueueInput{QueueUrl: aws.String(url)}); err != nil {
+		return errors.Wrapf(err, "failed to delete queue %s", url)
+	}
+	return nil
+}
+
 func createQueue(ctx context.Context, svc *sqs.SQS, name string, attributes map[string]*string) (*sqs.CreateQueueOutput, error) {
 	return svc.CreateQueueWithContext(ctx, &sqs.CreateQueueInput{
 		QueueName:  aws.String(name),
