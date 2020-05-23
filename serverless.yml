@@ -9,7 +9,7 @@ plugins:
 custom:
   configTableName: pipeline-configs-${self:provider.stage}
   identifiersTableName: pipeline-identifiers-${self:provider.stage}
-  bucketName: kinluek-serverless-processing-code-${self:provider.stage}
+  bucketName: ${env:NAME_SPACE}-serverless-processing-code-${self:provider.stage}
   bucketKey: consume.zip
   consumerRoleName: serverless-consumer-role-${self:provider.stage}
 

@@ -55,7 +55,7 @@ func (a *pipelineAdder) addConsumer(ctx context.Context, config ConfigParams, co
 	return consumer.Add(ctx, a.lambdaSvc, consumer.AddParams{
 		Bucket:      constants.ConsumerBucket,
 		Key:         constants.ConsumerKey,
-		Name:        config.ID,
+		Name:        a.makeConsumerName(config.ID),
 		Concurrency: int64(*config.LambdaConcurrencyLimit),
 		Timeout:     int64(*config.LambdaTimeoutSecs),
 		RoleArn:     constants.ConsumerRole,
@@ -70,6 +70,10 @@ func (a *pipelineAdder) addIdentifier(ctx context.Context, config ConfigParams, 
 
 func (a *pipelineAdder) makeQueueName(id string) string {
 	return fmt.Sprintf("%s-%s-queue", id, a.envName)
+}
+
+func (a *pipelineAdder) makeConsumerName(id string) string {
+	return fmt.Sprintf("%s-%s-consumer", id, a.envName)
 }
 
 func makePipelineIdentifier(id string, qi queue.IdentifierPair, ci consumer.Identifier) pipeline.Identifier {
