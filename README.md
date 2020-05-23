@@ -119,7 +119,30 @@ Finally, since this is all serverless, even with all these pipelines set up, you
 if they don't get used, although you will still have to pay for the Lambda storage costs which is $0.03 GB/month, so that would equate to $2.25 a month if we hit our soft limit storage for Lambda.
 
 
+## Setup
 
+1) Make sure you have an AWS account and credentials set up on your machine - (assumed basic knowledge of AWS).
+2) `npm install -g serverless` - To deploy this application make sure you have the serverless framework installed, for this you will also need Node and NPM installed.
+3) `npm install`
+4) `make STAGE=<stage_name> NAME_SPACE=<name_space> deploy` eg: `make STAGE=dev NAME_SPACE=kinluek deploy` the namespace is used to name 
+    S3 buckets, bucket names must be globally unique.
+5) `make upload_consumer` - this will upload the consumer code to the S3 bucket.
+6) `make STAGE=<stage_name> NAME_SPACE=<name_space> remove` - this will remove the stack, however it will not remove the created pipelines, to delete all the pipelines just delete all the items in the configs table first.
+
+### Main TODOS
+
+ - [x] Pipeline is created when a pipeline configuration is added to Dynamo DB.
+ - [x] Pipeline is removed when we delete the configuration.
+ - [ ] Pipeline is updated when we update the configuration.
+ - [ ] Consumer code is updated across all pipelines at once when we update the source code in S3.
+ 
+### Extras TODOS
+
+ - [ ] Full CI/CD with end to end testing.
+ - [ ] Handle partial creations
+ - [ ] Handle partial deletions
+ - [ ] Subscribe new consumer's log streams to an aggregated log service upon creation.
+ 
 ### NOTES
 
 - Add Lucid Chart Diagram
