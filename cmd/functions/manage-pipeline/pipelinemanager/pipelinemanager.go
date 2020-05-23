@@ -62,7 +62,7 @@ func (h *PipelineManager) add(ctx context.Context, instruction Instruction) erro
 
 func (h *PipelineManager) delete(ctx context.Context, instruction Instruction) error {
 	remover := newRemover(h.lambdaSvc, h.sqsSvc, h.db)
-	if err := remover.remove(ctx,  instruction.Config, instruction.Constants); err != nil {
+	if err := remover.remove(ctx, instruction.Config, instruction.Constants); err != nil {
 		return errors.Wrapf(err, "failed to remove pipeline")
 	}
 	return nil

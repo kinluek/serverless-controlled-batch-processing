@@ -12,7 +12,8 @@ func UnmarshalDynamoAttrMap(attribute map[string]events.DynamoDBAttributeValue, 
 	attrMap := make(map[string]*dynamodb.AttributeValue)
 	for k, v := range attribute {
 		var attr dynamodb.AttributeValue
-		bytes, err := v.MarshalJSON(); if err != nil {
+		bytes, err := v.MarshalJSON()
+		if err != nil {
 			return err
 		}
 		if err := json.Unmarshal(bytes, &attr); err != nil {

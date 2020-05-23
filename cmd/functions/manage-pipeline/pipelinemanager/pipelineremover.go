@@ -5,9 +5,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/aws/aws-sdk-go/service/sqs"
-	"github.com/kinluek/serverless-controlled-batch-processing/consumer"
 	"github.com/kinluek/serverless-controlled-batch-processing/pipeline"
-	"github.com/kinluek/serverless-controlled-batch-processing/queue"
+	"github.com/kinluek/serverless-controlled-batch-processing/pipeline/consumer"
+	"github.com/kinluek/serverless-controlled-batch-processing/pipeline/queue"
 	"github.com/pkg/errors"
 )
 
