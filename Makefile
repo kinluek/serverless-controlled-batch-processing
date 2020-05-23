@@ -12,10 +12,11 @@ clean:
 deploy: clean build
 	env NAME_SPACE=$(NAME_SPACE) sls deploy --verbose -s $(STAGE)
 
-# empty the bucket, this must be done before we remove the deployed stack
+# empty the bucket, this must be done before we can remove the deployed stack
 empty_bucket:
 	aws s3 rm s3://$(NAME_SPACE)-serverless-processing-code-$(STAGE) --recursive
 
+# remove the deployed service
 remove: empty_bucket
 	env NAME_SPACE=$(NAME_SPACE) sls remove -s $(STAGE)
 
