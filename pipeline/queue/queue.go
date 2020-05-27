@@ -63,6 +63,17 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) 
 	return output, nil
 }
 
+// UpdateVisibilityTimeout updates the visibility timeout for the given queue URL.
+func UpdateVisibilityTimeout(ctx context.Context, svc *sqs.SQS, queueURL string, timeout int) error {
+	_, err := svc.SetQueueAttributesWithContext(ctx, &sqs.SetQueueAttributesInput{
+		Attributes: map[string]*string{attrNameVisibilityTimeout:aws.String(strconv.Itoa(timeout))},
+		QueueUrl:   aws.String(queueURL),
+	})
+	if err != nil {
+		return errors.Wrapf(err, "failed to set timeout %s attribute on queue %s", timeout, queueURL)
+	}
+}
+
 // Delete takes a queue URL and removes it.
 func Delete(ctx context.Context, svc *sqs.SQS, url string) error {
 	if _, err := svc.DeleteQueueWithContext(ctx, &sqs.DeleteQueueInput{QueueUrl: aws.String(url)}); err != nil {
