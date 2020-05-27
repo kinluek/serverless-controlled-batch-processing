@@ -45,6 +45,8 @@ func (h *PipelineManager) handle(ctx context.Context, instruction Instruction) e
 	switch instruction.Operation {
 	case Add:
 		return h.add(ctx, instruction)
+	case Update:
+		return h.update(ctx, instruction)
 	case Delete:
 		return h.delete(ctx, instruction)
 	default:
@@ -56,6 +58,14 @@ func (h *PipelineManager) add(ctx context.Context, instruction Instruction) erro
 	adder := newAdder(h.lambdaSvc, h.sqsSvc, h.db, h.envName)
 	if err := adder.add(ctx, instruction.Config, instruction.Constants); err != nil {
 		return errors.Wrapf(err, "failed to add pipeline")
+	}
+	return nil
+}
+
+func (h *PipelineManager) update(ctx context.Context, instruction Instruction) error {
+	updater := newUpdater(h.lambdaSvc, h.sqsSvc)
+	if err := updater.update(ctx, instruction.Config, instruction.Constants); err != nil {
+		return errors.Wrapf(err, "failed to update pipeline")
 	}
 	return nil
 }
