@@ -54,6 +54,24 @@ func Add(ctx context.Context, svc *lambda.Lambda, p AddParams) (Identifier, erro
 	return ident, nil
 }
 
+// UpdateParams specify the configurations to update for a consumer.
+type UpdateParams struct {
+	Name        string // lambda function name
+	Concurrency *int64 // concurrency limit of the function (optional)
+	Timeout     *int64 // function timeout in seconds (optional)
+}
+
+// Update updates the consumer with the provided UpdateParams
+func Update(ctx context.Context, svc *lambda.Lambda, p UpdateParams) error {
+	if err := updateConcurrency(ctx, svc, p); err != nil {
+		return errors.Wrapf(err, "failed to update consumer %s concurrency tp %s", p.Name, *p.Concurrency)
+	}
+	if err := updateTimeout(ctx, svc, p); err != nil {
+		return errors.Wrapf(err, "failed to update consumer %s timeout tp %s seconds", p.Name, *p.Timeout)
+	}
+	return nil
+}
+
 // Delete takes a function name and deletes it.
 func Delete(ctx context.Context, svc *lambda.Lambda, name string) error {
 	if _, err := svc.DeleteFunctionWithContext(ctx, &lambda.DeleteFunctionInput{FunctionName: aws.String(name)}); err != nil {
@@ -114,4 +132,31 @@ func attachQueue(ctx context.Context, svc *lambda.Lambda, funcName, queueArn str
 		FunctionName:   aws.String(funcName),
 	})
 	return err
+}
+
+
+func updateConcurrency(ctx context.Context, svc *lambda.Lambda, p UpdateParams) error {
+	if p.Concurrency != nil {
+		_, err := svc.PutFunctionConcurrencyWithContext(ctx, &lambda.PutFunctionConcurrencyInput{
+			FunctionName:                 aws.String(p.Name),
+			ReservedConcurrentExecutions: p.Concurrency,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func updateTimeout(ctx context.Context, svc *lambda.Lambda, p UpdateParams) error {
+	if p.Timeout != nil {
+		_, err := svc.UpdateFunctionConfigurationWithContext(ctx, &lambda.UpdateFunctionConfigurationInput{
+			FunctionName:     nil,
+			Timeout:          nil,
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
