@@ -76,6 +76,19 @@ func (a *pipelineAdder) makeConsumerName(id string) string {
 	return fmt.Sprintf("%s-%s-consumer", id, a.envName)
 }
 
+func validateAddConfig(config ConfigParams) error {
+	if config.SQSVisibilityTimeoutSecs == nil {
+		return errors.New("invalid add config: missing sqs visibility timeout")
+	}
+	if config.LambdaTimeoutSecs == nil {
+		return errors.New("invalid add config: missing lambda timeout")
+	}
+	if config.LambdaConcurrencyLimit == nil {
+		return errors.New("invalid add config: missing lambda concurrency")
+	}
+	return nil
+}
+
 func makePipelineIdentifier(id string, qi queue.IdentifierPair, ci consumer.Identifier) pipeline.Identifier {
 	return pipeline.Identifier{
 		ID:                 id,
