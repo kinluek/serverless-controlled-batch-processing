@@ -72,6 +72,7 @@ func UpdateVisibilityTimeout(ctx context.Context, svc *sqs.SQS, queueURL string,
 	if err != nil {
 		return errors.Wrapf(err, "failed to set timeout %s attribute on queue %s", timeout, queueURL)
 	}
+	return nil
 }
 
 // Delete takes a queue URL and removes it.
