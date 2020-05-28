@@ -61,9 +61,6 @@ func (u *pipelineUpdater) updateQueue(ctx context.Context, config ConfigParams, 
 	return nil
 }
 
-
-
-
 func (u *pipelineUpdater) getIdentifiers(ctx context.Context, config ConfigParams, constants Constants) (pipeline.Identifier, error) {
 	return pipeline.GetIdentifier(ctx, u.db, constants.IdentifiersTable, config.ID)
 }
@@ -73,5 +70,5 @@ func pInt64(i *int) *int64 {
 		return nil
 	}
 	i64 := int64(*i)
-	return  &i64
+	return &i64
 }

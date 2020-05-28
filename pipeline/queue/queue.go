@@ -57,8 +57,8 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) 
 		return IdentifierPair{}, errors.Wrapf(err, "failed to get arn for queue %s", *mainOutput.QueueUrl)
 	}
 	output := IdentifierPair{
-		Main:  Identifier{*mainOutput.QueueUrl, mainArn},
-		DLQ: Identifier{*dlqOutput.QueueUrl, dlqArn},
+		Main: Identifier{*mainOutput.QueueUrl, mainArn},
+		DLQ:  Identifier{*dlqOutput.QueueUrl, dlqArn},
 	}
 	return output, nil
 }
@@ -66,7 +66,7 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) 
 // UpdateVisibilityTimeout updates the visibility timeout for the given queue URL.
 func UpdateVisibilityTimeout(ctx context.Context, svc *sqs.SQS, queueURL string, timeout int) error {
 	_, err := svc.SetQueueAttributesWithContext(ctx, &sqs.SetQueueAttributesInput{
-		Attributes: map[string]*string{attrNameVisibilityTimeout:aws.String(strconv.Itoa(timeout))},
+		Attributes: map[string]*string{attrNameVisibilityTimeout: aws.String(strconv.Itoa(timeout))},
 		QueueUrl:   aws.String(queueURL),
 	})
 	if err != nil {

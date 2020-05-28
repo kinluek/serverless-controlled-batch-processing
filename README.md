@@ -147,13 +147,15 @@ if you add a configuration item to the config table, for example:
 You should then almost instantly be able to view the new queues and functions set up for it in the SQS and Lambda consoles.
 A new item will also be added to the identifiers table with the ARNs and names of the new resources for that pipeline.
 
-If you delete the configuration item you just added, it will then subsequently remove all the created resources for it.
+ - If you delete the configuration item you just added, it will then subsequently remove all the created resources for it.
+ - If you update the configuration item, you should see the parameters updated on the resources.
+
 
 ### Main TODOS
 
  - [x] Pipeline is created when a pipeline configuration is added to Dynamo DB.
  - [x] Pipeline is removed when we delete the configuration.
- - [ ] Pipeline is updated when we update the configuration.
+ - [x] Pipeline is updated when we update the configuration.
  - [ ] Consumer code is updated across all pipelines at once when we update the source code in S3.
  
 ### Extras TODOS
