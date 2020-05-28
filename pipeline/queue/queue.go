@@ -57,8 +57,8 @@ func CreateWithDLQ(ctx context.Context, svc *sqs.SQS, name string, timeout int) 
 		return IdentifierPair{}, errors.Wrapf(err, "failed to get arn for queue %s", *mainOutput.QueueUrl)
 	}
 	output := IdentifierPair{
-		Main: Identifier{*dlqOutput.QueueUrl, dlqArn},
-		DLQ:  Identifier{*mainOutput.QueueUrl, mainArn},
+		Main:  Identifier{*mainOutput.QueueUrl, mainArn},
+		DLQ: Identifier{*dlqOutput.QueueUrl, dlqArn},
 	}
 	return output, nil
 }
