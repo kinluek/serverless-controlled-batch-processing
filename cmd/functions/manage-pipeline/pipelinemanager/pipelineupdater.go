@@ -52,8 +52,17 @@ func (u *pipelineUpdater) updateQueue(ctx context.Context, config ConfigParams, 
 	if config.SQSVisibilityTimeoutSecs == nil {
 		return nil
 	}
-	return queue.UpdateVisibilityTimeout(ctx, u.sqsSvc, ident.QueueURL, *config.SQSVisibilityTimeoutSecs)
+	if err := queue.UpdateVisibilityTimeout(ctx, u.sqsSvc, ident.QueueURL, *config.SQSVisibilityTimeoutSecs); err != nil {
+		return errors.Wrap(err, "failed updating main queue")
+	}
+	if err := queue.UpdateVisibilityTimeout(ctx, u.sqsSvc, ident.DeadLetterQueueURL, *config.SQSVisibilityTimeoutSecs); err != nil {
+		return errors.Wrap(err, "failed updating dead letter queue")
+	}
+	return nil
 }
+
+
+
 
 func (u *pipelineUpdater) getIdentifiers(ctx context.Context, config ConfigParams, constants Constants) (pipeline.Identifier, error) {
 	return pipeline.GetIdentifier(ctx, u.db, constants.IdentifiersTable, config.ID)
