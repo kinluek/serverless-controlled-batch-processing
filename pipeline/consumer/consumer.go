@@ -134,29 +134,24 @@ func attachQueue(ctx context.Context, svc *lambda.Lambda, funcName, queueArn str
 	return err
 }
 
-
 func updateConcurrency(ctx context.Context, svc *lambda.Lambda, p UpdateParams) error {
-	if p.Concurrency != nil {
-		_, err := svc.PutFunctionConcurrencyWithContext(ctx, &lambda.PutFunctionConcurrencyInput{
-			FunctionName:                 aws.String(p.Name),
-			ReservedConcurrentExecutions: p.Concurrency,
-		})
-		if err != nil {
-			return err
-		}
+	if p.Concurrency == nil {
+		return nil
 	}
-	return nil
+	_, err := svc.PutFunctionConcurrencyWithContext(ctx, &lambda.PutFunctionConcurrencyInput{
+		FunctionName:                 aws.String(p.Name),
+		ReservedConcurrentExecutions: p.Concurrency,
+	})
+	return err
 }
 
 func updateTimeout(ctx context.Context, svc *lambda.Lambda, p UpdateParams) error {
-	if p.Timeout != nil {
-		_, err := svc.UpdateFunctionConfigurationWithContext(ctx, &lambda.UpdateFunctionConfigurationInput{
-			FunctionName:     nil,
-			Timeout:          nil,
-		})
-		if err != nil {
-			return err
-		}
+	if p.Timeout == nil {
+		return nil
 	}
-	return nil
+	_, err := svc.UpdateFunctionConfigurationWithContext(ctx, &lambda.UpdateFunctionConfigurationInput{
+		FunctionName: nil,
+		Timeout:      nil,
+	})
+	return err
 }

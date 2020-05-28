@@ -4,6 +4,8 @@ An experimental project started out of boredom and curiosity, the project sets o
 
 Before you delve into this, it is important to know that this project is just for fun and somewhat of an AWS anti-pattern, anything you decide to take from this, you take at your own risk.
 
+The Application code is written in **Go** and deployed on **AWS** using the **Serverless Framework**.
+
 ## The Problem
 
 ### Sharing Queues

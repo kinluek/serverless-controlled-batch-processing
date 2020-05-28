@@ -63,7 +63,7 @@ func (h *PipelineManager) add(ctx context.Context, instruction Instruction) erro
 }
 
 func (h *PipelineManager) update(ctx context.Context, instruction Instruction) error {
-	updater := newUpdater(h.lambdaSvc, h.sqsSvc)
+	updater := newUpdater(h.lambdaSvc, h.sqsSvc, h.db)
 	if err := updater.update(ctx, instruction.Config, instruction.Constants); err != nil {
 		return errors.Wrapf(err, "failed to update pipeline")
 	}
