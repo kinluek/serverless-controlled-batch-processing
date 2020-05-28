@@ -150,8 +150,8 @@ func updateTimeout(ctx context.Context, svc *lambda.Lambda, p UpdateParams) erro
 		return nil
 	}
 	_, err := svc.UpdateFunctionConfigurationWithContext(ctx, &lambda.UpdateFunctionConfigurationInput{
-		FunctionName: nil,
-		Timeout:      nil,
+		FunctionName: aws.String(p.Name),
+		Timeout:      p.Timeout,
 	})
 	return err
 }
